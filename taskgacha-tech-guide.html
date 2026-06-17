@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Webアプリ技術ガイド — タスク達成ガチャで学ぶ</title>
+<style>
+  :root {
+    --bg: #f7f6f2; --surface: #ffffff; --text: #222; --muted: #666;
+    --border: #e2e1da; --accent: #6c4ad6; --soft: #efeaff;
+    --code-bg: #1e1e2e; --code-text: #cdd6f4;
+    --n: #3781d8; --r: #9a4ad6; --sr: #e8a417;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a; --surface: #262624; --text: #f2f1ec; --muted: #a3a39c;
+      --border: #3a3a37; --accent: #9b7df0; --soft: #2c2640;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.8;
+    margin: 0; padding: 0;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  /* ヘッダー */
+  .hero { background: linear-gradient(135deg, #6c4ad6, #b06ae8); color: #fff; border-radius: 18px; padding: 32px 28px; margin-bottom: 36px; }
+  .hero h1 { margin: 0 0 8px; font-size: 24px; }
+  .hero p { margin: 0; opacity: .85; font-size: 15px; }
+
+  /* 目次 */
+  .toc { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; margin-bottom: 36px; }
+  .toc h2 { margin: 0 0 12px; font-size: 15px; color: var(--muted); font-weight: 600; letter-spacing: .05em; }
+  .toc ol { margin: 0; padding-left: 20px; }
+  .toc li { margin: 6px 0; }
+  .toc a { color: var(--accent); text-decoration: none; font-weight: 500; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* セクション */
+  .section { margin-bottom: 48px; }
+  h2.section-title {
+    font-size: 20px; font-weight: 700; margin: 0 0 18px;
+    display: flex; align-items: center; gap: 10px;
+    padding-bottom: 10px; border-bottom: 2px solid var(--accent);
+  }
+  h2.section-title .num {
+    background: var(--accent); color: #fff; width: 30px; height: 30px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; flex-shrink: 0;
+  }
+  h3 { font-size: 16px; font-weight: 600; margin: 24px 0 8px; color: var(--accent); }
+
+  /* テキスト */
+  p { margin: 0 0 14px; }
+  .lead { font-size: 16px; background: var(--soft); border-left: 4px solid var(--accent); padding: 12px 16px; border-radius: 0 10px 10px 0; margin-bottom: 18px; }
+
+  /* コードブロック */
+  pre {
+    background: var(--code-bg); color: var(--code-text);
+    border-radius: 12px; padding: 18px 20px; overflow-x: auto;
+    font-size: 13.5px; line-height: 1.65; margin: 12px 0 20px;
+    font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+  }
+  code { font-family: inherit; }
+  .comment { color: #6272a4; }
+  .kw { color: #ff79c6; }
+  .str { color: #f1fa8c; }
+  .fn { color: #50fa7b; }
+  .num-c { color: #bd93f9; }
+
+  /* インラインコード */
+  p code, li code {
+    background: var(--soft); color: var(--accent);
+    padding: 2px 7px; border-radius: 5px; font-size: 13px;
+    font-family: "Cascadia Code", "Consolas", monospace;
+  }
+
+  /* 図解ボックス */
+  .diagram {
+    background: var(--code-bg); color: var(--code-text);
+    border-radius: 12px; padding: 18px 20px; font-family: monospace;
+    font-size: 13px; line-height: 1.7; margin: 14px 0 20px; overflow-x: auto;
+    white-space: pre;
+  }
+
+  /* ポイントボックス */
+  .point { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin: 14px 0; }
+  .point .label { font-size: 12px; font-weight: 700; color: var(--accent); letter-spacing: .08em; margin-bottom: 6px; }
+
+  /* チップ */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .chip { background: var(--soft); color: var(--accent); border-radius: 999px; padding: 4px 14px; font-size: 13px; font-weight: 600; }
+
+  /* アコーディオン深堀り */
+  .deep-list { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+  .deep-item { border: 1.5px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .deep-toggle {
+    width: 100%; text-align: left; background: var(--surface); border: none; cursor: pointer;
+    padding: 16px 20px; font: inherit; font-size: 15px; font-weight: 600; color: var(--text);
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    transition: background .15s;
+  }
+  .deep-toggle:hover { background: var(--soft); }
+  .deep-toggle .arrow { font-size: 12px; color: var(--muted); transition: transform .25s; flex-shrink: 0; }
+  .deep-toggle.open { color: var(--accent); background: var(--soft); }
+  .deep-toggle.open .arrow { transform: rotate(180deg); }
+  .deep-body {
+    max-height: 0; overflow: hidden;
+    transition: max-height .4s cubic-bezier(.4,0,.2,1);
+    background: var(--bg);
+  }
+  .deep-body.open { max-height: 4000px; }
+  .deep-body-inner { padding: 20px 20px 24px; }
+  .deep-body-inner h3 { font-size: 15px; font-weight: 600; color: var(--accent); margin: 22px 0 8px; }
+  .deep-body-inner h3:first-child { margin-top: 0; }
+  .step-list { list-style: none; padding: 0; margin: 10px 0 16px; }
+  .step-list li { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .step-list li:last-child { border-bottom: none; }
+  .step-list li .step-num { background: var(--accent); color: #fff; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+
+  /* ステップアップ（中級・上級）ネスト */
+  .stepup-list { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; padding-top: 18px; border-top: 1.5px dashed var(--border); }
+  .stepup-label { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--muted); margin-bottom: 2px; }
+  .stepup-item { border: 1.5px solid var(--border); border-radius: 11px; overflow: hidden; }
+  .stepup-toggle {
+    width: 100%; text-align: left; background: var(--bg); border: none; cursor: pointer;
+    padding: 13px 16px; font: inherit; font-size: 14px; font-weight: 600; color: var(--text);
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    transition: background .15s;
+  }
+  .stepup-toggle:hover { background: var(--soft); }
+  .stepup-toggle .badge { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 9px; white-space: nowrap; flex-shrink: 0; }
+  .badge-mid { background: #e0f0ff; color: #1a5fa8; }
+  .badge-adv { background: #fff0e0; color: #a85a00; }
+  @media (prefers-color-scheme: dark) {
+    .badge-mid { background: #1a3050; color: #7ab8f5; }
+    .badge-adv { background: #3a2510; color: #f5b87a; }
+  }
+  .stepup-toggle .sarrow { font-size: 11px; color: var(--muted); transition: transform .25s; flex-shrink: 0; }
+  .stepup-toggle.open { color: var(--accent); background: var(--soft); }
+  .stepup-toggle.open .sarrow { transform: rotate(180deg); }
+  .stepup-body { max-height: 0; overflow: hidden; transition: max-height .4s cubic-bezier(.4,0,.2,1); background: var(--surface); }
+  .stepup-body.open { max-height: 3000px; }
+  .stepup-body-inner { padding: 16px 18px 20px; }
+  .stepup-body-inner h4 { font-size: 14px; font-weight: 600; color: var(--accent); margin: 18px 0 7px; }
+  .stepup-body-inner h4:first-child { margin-top: 0; }
+  .warn { background: #fff8e0; border-left: 4px solid #e8a417; border-radius: 0 9px 9px 0; padding: 10px 14px; font-size: 13px; margin: 10px 0; }
+  @media (prefers-color-scheme: dark) { .warn { background: #2e2510; border-color: #f0bf4a; } }
+  .tech-card { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .tech-card:last-child { border-bottom: none; }
+  .tech-card .tc-icon { font-size: 22px; flex-shrink: 0; }
+  .tech-card .tc-body { flex: 1; }
+  .tech-card .tc-name { font-weight: 700; font-size: 14px; }
+  .tech-card .tc-desc { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  /* テーブル */
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+  th { background: var(--soft); color: var(--accent); padding: 9px 14px; text-align: left; font-weight: 600; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+
+  /* フッター */
+  .footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <h1>🎴 Webアプリ技術ガイド</h1>
+    <p>タスク達成ガチャアプリを題材に、使った技術をゼロから解説する学習メモ。<br>作成日: 2026-06-17　by Claude × taro</p>
+  </div>
+
+  <div class="toc">
+    <h2>📚 目次</h2>
+    <ol>
+      <li><a href="#overview">全体像 — 3つの層＋保存</a></li>
+      <li><a href="#html">HTML — 骨格（何を置くか）</a></li>
+      <li><a href="#css">CSS — 見た目（どう見せるか）</a></li>
+      <li><a href="#js">JavaScript — ロジック（どう動くか）</a></li>
+      <li><a href="#localstorage">localStorage — ブラウザ内保存</a></li>
+      <li><a href="#ai">AI画像生成 — カード画像の作り方</a></li>
+      <li><a href="#next">次のステップ</a></li>
+    </ol>
+  </div>
+
+  <!-- 1. 全体像 -->
+  <div class="section" id="overview">
+    <h2 class="section-title"><span class="num">0</span>全体像 — 3つの層＋保存</h2>
+    <p class="lead">Webアプリは「HTML・CSS・JavaScript」の3層でできています。サーバーなし・ネットなしで動くのは、すべてこの中で完結しているから。</p>
+    <div class="diagram">┌─────────────────────────────────────────────┐
+│  HTML  ← 「何を表示するか」の骨格             │
+│  CSS   ← 「どう見せるか」の見た目             │
+│  JS    ← 「どう動くか」のロジック             │
+└─────────────────────────────────────────────┘
+              ↕ データのやり取り
+┌─────────────────────────────────────────────┐
+│  localStorage  ← ブラウザ内の保存先           │
+└─────────────────────────────────────────────┘</div>
+
+    <table>
+      <tr><th>技術</th><th>役割</th><th>アプリでの例</th></tr>
+      <tr><td><strong>HTML</strong></td><td>画面の構造・骨格</td><td>ボタン・タブ・入力欄の配置</td></tr>
+      <tr><td><strong>CSS</strong></td><td>見た目・デザイン</td><td>色・フォント・アニメーション</td></tr>
+      <tr><td><strong>JavaScript</strong></td><td>動き・計算・処理</td><td>ガチャロジック・ポイント計算</td></tr>
+      <tr><td><strong>localStorage</strong></td><td>データの保存</td><td>ポイント・カード・ログの永続化</td></tr>
+    </table>
+  </div>
+
+  <!-- 2. HTML -->
+  <div class="section" id="html">
+    <h2 class="section-title"><span class="num">1</span>HTML — 骨格（何を置くか）</h2>
+    <p class="lead">一言で言うと：画面に「何を置くか」をタグで宣言するもの。</p>
+
+    <h3>基本の書き方</h3>
+    <p>HTMLは「タグ」で要素を囲んで意味を持たせます。</p>
+    <pre><code><span class="comment">&lt;!-- ボタンの例 --&gt;</span>
+&lt;button <span class="str">id</span>=<span class="str">"gacha-btn"</span>&gt;ガチャを引く！&lt;/button&gt;
+
+<span class="comment">&lt;!-- 入力欄の例（回数入力） --&gt;</span>
+&lt;input <span class="str">id</span>=<span class="str">"memo-count"</span> <span class="str">type</span>=<span class="str">"number"</span> <span class="str">min</span>=<span class="str">"1"</span> <span class="str">max</span>=<span class="str">"20"</span> <span class="str">value</span>=<span class="str">"1"</span>&gt;</code></pre>
+
+    <p><code>id</code>で名前をつけておくと、あとでJavaScriptから「このボタン」と名指しで呼び出せます。</p>
+
+    <h3>アプリで使ったHTMLタグ一覧</h3>
+    <table>
+      <tr><th>タグ</th><th>用途</th></tr>
+      <tr><td><code>&lt;div&gt;</code></td><td>箱・グループ（レイアウトの区切り）</td></tr>
+      <tr><td><code>&lt;button&gt;</code></td><td>完了ボタン・ガチャボタンなど</td></tr>
+      <tr><td><code>&lt;input type="number"&gt;</code></td><td>回数入力欄</td></tr>
+      <tr><td><code>&lt;textarea&gt;</code></td><td>メモ入力欄（複数行）</td></tr>
+      <tr><td><code>&lt;select&gt;</code></td><td>日付セレクター（ログタブ）</td></tr>
+      <tr><td><code>&lt;img&gt;</code></td><td>カード画像の表示</td></tr>
+    </table>
+
+    <div class="point">
+      <div class="label">💡 ポイント</div>
+      HTMLはただの「設計図」。見た目の指定はCSS、動きはJavaScriptに任せるのが基本の分業です。
+    </div>
+  </div>
+
+  <!-- 3. CSS -->
+  <div class="section" id="css">
+    <h2 class="section-title"><span class="num">2</span>CSS — 見た目（どう見せるか）</h2>
+    <p class="lead">一言で言うと：骨格に色・形・位置を塗るもの。</p>
+
+    <h3>基本の書き方</h3>
+    <pre><code><span class="comment">/* セレクター { プロパティ: 値; } という形 */</span>
+.<span class="fn">gacha-btn</span> {
+  background: <span class="fn">linear-gradient</span>(<span class="num-c">135deg</span>, <span class="str">#7d5fe0</span>, <span class="str">#b06ae8</span>);
+  border-radius: <span class="num-c">16px</span>;
+  color: <span class="str">#fff</span>;
+  font-size: <span class="num-c">18px</span>;
+}</code></pre>
+
+    <h3>アプリで使った主なCSS技術</h3>
+
+    <h3>① CSS変数（テーマ管理）</h3>
+    <p>色を変数にまとめておくと、ダークモード対応が簡単になります。</p>
+    <pre><code><span class="comment">/* 変数の定義（:root = ページ全体に適用） */</span>
+:<span class="fn">root</span> {
+  --accent: <span class="str">#6c4ad6</span>;   <span class="comment">/* メインカラー（紫） */</span>
+  --bg: <span class="str">#f4f3ef</span>;        <span class="comment">/* 背景色 */</span>
+  --text: <span class="str">#222</span>;         <span class="comment">/* 文字色 */</span>
+}
+
+<span class="comment">/* ダークモード時は同じ変数名で色を上書きするだけ */</span>
+@<span class="kw">media</span> (prefers-color-scheme: dark) {
+  :<span class="fn">root</span> {
+    --accent: <span class="str">#9b7df0</span>;   <span class="comment">/* 少し明るめの紫に自動変更 */</span>
+    --bg: <span class="str">#1c1c1a</span>;
+    --text: <span class="str">#f2f1ec</span>;
+  }
+}</code></pre>
+
+    <h3>② アニメーション（@keyframes）</h3>
+    <p>ガチャカードのフリップ演出はこれで作っています。</p>
+    <pre><code><span class="comment">/* アニメーションの定義 */</span>
+@<span class="kw">keyframes</span> flipin {
+  <span class="num-c">0%</span>   { transform: <span class="fn">rotateY</span>(<span class="num-c">90deg</span>) <span class="fn">scale</span>(<span class="num-c">.8</span>); opacity: <span class="num-c">0</span>; }
+  <span class="num-c">100%</span> { transform: <span class="fn">rotateY</span>(<span class="num-c">0</span>)      <span class="fn">scale</span>(<span class="num-c">1</span>);  opacity: <span class="num-c">1</span>; }
+}
+
+<span class="comment">/* カード要素に適用 */</span>
+.<span class="fn">bigcard</span> {
+  animation: flipin <span class="num-c">.6s</span> <span class="fn">cubic-bezier</span>(.2,.8,.3,1);
+}</code></pre>
+
+    <h3>③ Gridレイアウト（コレクション一覧）</h3>
+    <p>画面幅に応じて自動で列数が変わる並び方をこれで実現しています。</p>
+    <pre><code>.<span class="fn">grid</span> {
+  display: grid;
+  <span class="comment">/* 最小130px確保しつつ、余白を均等に埋める列を自動生成 */</span>
+  grid-template-columns: <span class="fn">repeat</span>(auto-fill, <span class="fn">minmax</span>(<span class="num-c">130px</span>, <span class="num-c">1fr</span>));
+  gap: <span class="num-c">11px</span>;
+}</code></pre>
+
+    <div class="point">
+      <div class="label">💡 ポイント</div>
+      CSSは「セレクター（どこに）{ プロパティ: 値 }（何をする）」の繰り返しです。慣れると英語を読む感覚に近くなります。
+    </div>
+  </div>
+
+  <!-- 4. JavaScript -->
+  <div class="section" id="js">
+    <h2 class="section-title"><span class="num">3</span>JavaScript — ロジック（どう動くか）</h2>
+    <p class="lead">一言で言うと：「ボタンを押したら何かする」という動きを書くもの。ガチャの確率計算・画面更新・データ管理もすべてここ。</p>
+
+    <h3>① ボタンに動きをつける</h3>
+    <pre><code><span class="comment">// $() は getElementById の省略形（アプリ内で定義）</span>
+<span class="kw">function</span> <span class="fn">$</span>(id) { <span class="kw">return</span> document.<span class="fn">getElementById</span>(id); }
+
+<span class="comment">// ボタンを押したときの処理を登録</span>
+<span class="fn">$</span>(<span class="str">"gacha-btn"</span>).onclick = () => {
+  <span class="comment">// ここに処理を書く</span>
+  <span class="fn">playGacha</span>();
+};</code></pre>
+
+    <h3>② ガチャの確率ロジック</h3>
+    <p>0〜1の乱数を生成して、確率帯に当てはめています。</p>
+    <pre><code><span class="comment">// レア度と確率の定義</span>
+<span class="kw">const</span> RATES = [
+  [<span class="str">"N"</span>,   <span class="num-c">0.60</span>],  <span class="comment">// 60%</span>
+  [<span class="str">"R"</span>,   <span class="num-c">0.27</span>],  <span class="comment">// 27%</span>
+  [<span class="str">"SR"</span>,  <span class="num-c">0.10</span>],  <span class="comment">// 10%</span>
+  [<span class="str">"SSR"</span>, <span class="num-c">0.03</span>],  <span class="comment">//  3%</span>
+];
+
+<span class="kw">function</span> <span class="fn">drawRarity</span>() {
+  <span class="kw">const</span> r = Math.<span class="fn">random</span>();  <span class="comment">// 0.0〜1.0 のランダムな数</span>
+  <span class="kw">let</span> c = <span class="num-c">0</span>;
+  <span class="kw">for</span> (<span class="kw">const</span> [rarity, prob] <span class="kw">of</span> RATES) {
+    c += prob;
+    <span class="kw">if</span> (r < c) <span class="kw">return</span> rarity;  <span class="comment">// 確率帯に入ったら返す</span>
+  }
+}</code></pre>
+    <p>例：乱数が <code>0.72</code> なら → N(0.60)を超えている → R(0.87)以下 → <strong>R確定</strong></p>
+
+    <h3>③ 回数まとめて完了（今回追加した機能）</h3>
+    <pre><code><span class="kw">function</span> <span class="fn">confirmComplete</span>() {
+  <span class="kw">const</span> t = pendingTask;
+  <span class="kw">const</span> count = <span class="fn">parseInt</span>(<span class="fn">$</span>(<span class="str">"memo-count"</span>).value) || <span class="num-c">1</span>;  <span class="comment">// 入力された回数</span>
+  <span class="kw">const</span> totalPt = t.pt * count;                          <span class="comment">// 合計ポイント</span>
+
+  data.points += totalPt;  <span class="comment">// ポイント加算</span>
+
+  <span class="comment">// 回数分ループしてログに記録</span>
+  <span class="kw">for</span> (<span class="kw">let</span> i = <span class="num-c">0</span>; i < count; i++) {
+    data.log.<span class="fn">push</span>({ name: t.name, pt: t.pt, <span class="comment">/* ... */</span> });
+  }
+
+  <span class="fn">toast</span>(<span class="str">"+"</span> + totalPt + <span class="str">"pt 獲得！"</span> + (count > <span class="num-c">1</span> ? <span class="str">" (×"</span> + count + <span class="str">")"</span> : <span class="str">""</span>));
+}</code></pre>
+
+    <div class="point">
+      <div class="label">💡 ポイント</div>
+      JavaScriptは「変数に値を入れる → 計算する → 結果を画面に反映する」の繰り返しです。英語に近い構文なので、読んでいると意味が取れるようになってきます。
+    </div>
+  </div>
+
+  <!-- 5. localStorage -->
+  <div class="section" id="localstorage">
+    <h2 class="section-title"><span class="num">4</span>localStorage — ブラウザ内保存</h2>
+    <p class="lead">一言で言うと：ブラウザに付属している「小さなメモ帳」。ページを閉じても消えない。</p>
+
+    <h3>基本の読み書き</h3>
+    <pre><code><span class="comment">// 保存（オブジェクト → JSON文字列に変換して保存）</span>
+localStorage.<span class="fn">setItem</span>(<span class="str">"taskGachaData_v2"</span>, JSON.<span class="fn">stringify</span>(data));
+
+<span class="comment">// 読み込み（JSON文字列 → オブジェクトに戻す）</span>
+<span class="kw">const</span> data = JSON.<span class="fn">parse</span>(localStorage.<span class="fn">getItem</span>(<span class="str">"taskGachaData_v2"</span>));</code></pre>
+
+    <h3>JSON とは？</h3>
+    <p>データを文字列として保存・送受信するための書き方です。</p>
+    <pre><code><span class="comment">// JavaScriptのオブジェクト（プログラム内の形）</span>
+<span class="kw">const</span> data = {
+  points: <span class="num-c">150</span>,
+  tasks: [{ name: <span class="str">"新規ケース対応"</span>, pt: <span class="num-c">20</span> }]
+};
+
+<span class="comment">// JSON文字列（保存・バックアップファイルの中身）</span>
+<span class="str">'{"points":150,"tasks":[{"name":"新規ケース対応","pt":20}]}'</span></code></pre>
+
+    <h3>なぜバックアップが必要？</h3>
+    <div class="diagram">localStorage はファイルのパスごとに別管理
+
+  C:\OneDrive\MyApps\taskgacha.html → データA（本番）
+  C:\Documents\ai-test\taskgacha.html → データB（別扱い）
+
+  ブラウザのキャッシュクリアでも消える可能性あり
+  → 定期的に「📤 バックアップを書き出す」でJSONを保存</div>
+
+    <div class="point">
+      <div class="label">💡 ポイント</div>
+      localStorageはシンプルで手軽ですが「その端末・そのブラウザ専用」です。複数端末で同期したい場合はサーバー（データベース）が必要になります。
+    </div>
+  </div>
+
+  <!-- 6. AI画像生成 -->
+  <div class="section" id="ai">
+    <h2 class="section-title"><span class="num">5</span>AI画像生成 — カード画像の作り方</h2>
+    <p class="lead">これだけ毛色が違います。Gemini AIにプロンプトを送り、返ってきた画像をHTMLに直接埋め込む流れです。</p>
+
+    <h3>全体の流れ</h3>
+    <div class="diagram">① プロンプトをJSONファイルに書く
+    「縦型カード、渋谷を背景に勇者が剣を振る、アニメ調...」
+           ↓
+② nano-banana スキルがGemini APIを呼び出す
+           ↓
+③ WebP画像ファイルが生成される（高画質・大きめ）
+           ↓
+④ Python（pillow）で圧縮（512px・品質80）
+    9.5MB → 0.1MB 程度に削減
+           ↓
+⑤ Base64に変換（画像→文字列）
+           ↓
+⑥ HTMLに直接埋め込み（外部ファイル不要！）</div>
+
+    <h3>Base64とは？</h3>
+    <p>画像データを「文字列」に変換する方法です。これのおかげでHTMLファイル1個の中に18枚の画像が全部入っています。</p>
+    <pre><code><span class="comment">&lt;!-- 通常の画像（外部ファイルが必要） --&gt;</span>
+&lt;img src=<span class="str">"card01.webp"</span>&gt;
+
+<span class="comment">&lt;!-- Base64埋め込み（ファイル1個で完結） --&gt;</span>
+&lt;img src=<span class="str">"data:image/webp;base64,UklGRi..."</span>&gt;
+<span class="comment">&lt;!--                              ↑ ここに長い文字列が続く --&gt;</span></code></pre>
+
+    <h3>プロンプト設計のポイント</h3>
+    <table>
+      <tr><th>要素</th><th>内容</th><th>アプリでの例</th></tr>
+      <tr><td>縦横比</td><td>カードサイズの指定</td><td>3:4 portrait aspect ratio</td></tr>
+      <tr><td>キャラクター</td><td>職業・装備・レア度</td><td>rookie WARRIOR, simple gear</td></tr>
+      <tr><td>ポーズ</td><td>動作・動き</td><td>swinging sword dynamically</td></tr>
+      <tr><td>背景</td><td>日本の場所（レア度で変化）</td><td>Shibuya Tokyo, scramble crossing</td></tr>
+      <tr><td>画風</td><td>レア度で変化</td><td>N=アニメ調 → SSR=フォトリアル</td></tr>
+      <tr><td>地名ラベル</td><td>必ず表示する</td><td>display the label '渋谷(東京都)'</td></tr>
+    </table>
+
+    <div class="point">
+      <div class="label">💡 ポイント</div>
+      AI画像生成は「プロンプトエンジニアリング（どう指示するか）」が腕の見せどころ。英語で具体的・詳細に書くほど意図通りの画像になりやすいです。
+    </div>
+  </div>
+
+  <!-- 7. 深堀り学習 -->
+  <div class="section" id="next">
+    <h2 class="section-title"><span class="num">6</span>深堀り学習 — クリックして展開</h2>
+    <p>各トピックをクリックすると詳しい解説が表示されます。</p>
+
+    <div class="deep-list">
+
+      <!-- ① JSの確率ロジック -->
+      <div class="deep-item">
+        <button class="deep-toggle" onclick="toggleDeep(this)">
+          <span>📖 JavaScript深堀り — ガチャの確率ロジックを読み解く</span>
+          <span class="arrow">▼</span>
+        </button>
+        <div class="deep-body">
+          <div class="deep-body-inner">
+
+            <h3>確率の仕組みを図で理解する</h3>
+            <p><code>Math.random()</code> は 0.0〜1.0 のランダムな小数を返します。これを「確率の帯」に当てはめることでレア度を決めます。</p>
+            <pre><code><span class="comment">// 0.0 ───────────────────────────── 1.0
+//  |←── N(60%) ──→|← R(27%)→|←SR→|SSR|</span>
+//  0.0            0.60      0.87  0.97 1.0</code></pre>
+
+            <h3>実際のコード（アプリから抜粋）</h3>
+            <pre><code><span class="kw">const</span> RATES = [
+  [<span class="str">"N"</span>,   <span class="num-c">0.60</span>],
+  [<span class="str">"R"</span>,   <span class="num-c">0.27</span>],
+  [<span class="str">"SR"</span>,  <span class="num-c">0.10</span>],
+  [<span class="str">"SSR"</span>, <span class="num-c">0.03</span>],
+];
+
+<span class="kw">function</span> <span class="fn">drawRarity</span>() {
+  <span class="kw">const</span> r = Math.<span class="fn">random</span>();  <span class="comment">// 例: 0.723</span>
+  <span class="kw">let</span> c = <span class="num-c">0</span>;
+  <span class="kw">for</span> (<span class="kw">const</span> [rarity, prob] <span class="kw">of</span> RATES) {
+    c += prob;               <span class="comment">// c が 0.60 → 0.87 → 0.97 → 1.0 と増える</span>
+    <span class="kw">if</span> (r < c) <span class="kw">return</span> rarity; <span class="comment">// 初めて r を超えた時点でそのレア度を返す</span>
+  }
+}</code></pre>
+
+            <h3>1行ずつ読み解く</h3>
+            <ul class="step-list">
+              <li><span class="step-num">1</span><span><code>Math.random()</code> で 0.723 などの数が出る</span></li>
+              <li><span class="step-num">2</span><span>ループで <code>c</code> に確率を足していく（0.60 → 0.87 → 0.97 → 1.0）</span></li>
+              <li><span class="step-num">3</span><span>0.723 は 0.60 より大きい → N は外れ</span></li>
+              <li><span class="step-num">4</span><span>0.723 は 0.87 より小さい → <strong>R が当選</strong></span></li>
+            </ul>
+
+            <h3>カードプールから1枚選ぶ</h3>
+            <pre><code><span class="comment">// レア度が決まったら、そのプールからランダムに1枚</span>
+<span class="kw">function</span> <span class="fn">pick</span>(arr) {
+  <span class="kw">return</span> arr[Math.<span class="fn">floor</span>(Math.<span class="fn">random</span>() * arr.length)];
+}
+
+<span class="kw">const</span> rarity = <span class="fn">drawRarity</span>();               <span class="comment">// 例: "R"</span>
+<span class="kw">const</span> pool = CARD_POOL.<span class="fn">filter</span>(c => c.rarity === rarity);
+<span class="kw">const</span> card = <span class="fn">pick</span>(pool);                    <span class="comment">// Rカードの中から1枚</span></code></pre>
+
+            <div class="point"><div class="label">💡 ポイント</div>
+            <code>Math.floor()</code> は小数点以下を切り捨てる関数。<code>Math.random() * 5</code> で 0.0〜4.99…が出るので、floorすると 0〜4 の整数になります。配列の添え字（番号）として使えます。</div>
+
+            <!-- JS ステップアップ -->
+            <div class="stepup-list">
+              <div class="stepup-label">📚 ステップアップ</div>
+
+              <div class="stepup-item">
+                <button class="stepup-toggle" onclick="toggleStepup(this)">
+                  <span>中級：関数・配列・非同期処理を理解する</span>
+                  <span class="badge badge-mid">中級</span>
+                  <span class="sarrow">▼</span>
+                </button>
+                <div class="stepup-body">
+                  <div class="stepup-body-inner">
+                    <h4>① アロー関数 vs 通常関数</h4>
+                    <p>アプリ内では <code>() =&gt; {}</code> という書き方を多用しています。</p>
+                    <pre><code><span class="comment">// 通常の関数（古い書き方）</span>
+<span class="kw">function</span> <span class="fn">add</span>(a, b) { <span class="kw">return</span> a + b; }
+
+<span class="comment">// アロー関数（モダンな書き方・ほぼ同じ意味）</span>
+<span class="kw">const</span> add = (a, b) =&gt; a + b;
+
+<span class="comment">// イベントで使う例（アプリのボタン処理）</span>
+btn.onclick = () =&gt; { <span class="fn">doSomething</span>(); };</code></pre>
+
+                    <h4>② 配列メソッド（filter / map / find）</h4>
+                    <p>アプリ内でカードを絞り込むときに使っています。</p>
+                    <pre><code><span class="kw">const</span> cards = [
+  { id: <span class="str">"c01"</span>, rarity: <span class="str">"N"</span>  },
+  { id: <span class="str">"c02"</span>, rarity: <span class="str">"SR"</span> },
+  { id: <span class="str">"c03"</span>, rarity: <span class="str">"N"</span>  },
+];
+
+<span class="comment">// filter：条件に合うものだけ残す</span>
+<span class="kw">const</span> nCards = cards.<span class="fn">filter</span>(c =&gt; c.rarity === <span class="str">"N"</span>);
+<span class="comment">// → [{id:"c01",...}, {id:"c03",...}]</span>
+
+<span class="comment">// map：各要素を変換して新しい配列を作る</span>
+<span class="kw">const</span> ids = cards.<span class="fn">map</span>(c =&gt; c.id);
+<span class="comment">// → ["c01", "c02", "c03"]</span>
+
+<span class="comment">// find：最初に条件に合うものを1つ返す</span>
+<span class="kw">const</span> sr = cards.<span class="fn">find</span>(c =&gt; c.rarity === <span class="str">"SR"</span>);
+<span class="comment">// → {id:"c02", rarity:"SR"}</span></code></pre>
+
+                    <h4>③ 非同期処理（async / await）</h4>
+                    <p>AI画像生成やAPIとの通信は「時間がかかる処理」です。JSはデフォルトで待たずに次へ進むため、<code>await</code> で「完了するまで待つ」と明示します。</p>
+                    <pre><code><span class="comment">// ❌ 待たないと結果が空になる</span>
+<span class="kw">const</span> data = <span class="fn">fetch</span>(<span class="str">"https://api.example.com/cards"</span>);
+console.<span class="fn">log</span>(data); <span class="comment">// → Promise（まだ取得中）</span>
+
+<span class="comment">// ✅ await で完了を待つ</span>
+<span class="kw">async function</span> <span class="fn">loadCards</span>() {
+  <span class="kw">const</span> res  = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">"https://api.example.com/cards"</span>);
+  <span class="kw">const</span> data = <span class="kw">await</span> res.<span class="fn">json</span>();
+  console.<span class="fn">log</span>(data); <span class="comment">// → [{...}, {...}] ちゃんと取れる</span>
+}</code></pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="stepup-item">
+                <button class="stepup-toggle" onclick="toggleStepup(this)">
+                  <span>上級：よくあるミスとデバッグの方法</span>
+                  <span class="badge badge-adv">上級</span>
+                  <span class="sarrow">▼</span>
+                </button>
+                <div class="stepup-body">
+                  <div class="stepup-body-inner">
+                    <h4>よくあるミス①：undefined / null エラー</h4>
+                    <div class="warn">⚠️ TypeError: Cannot read properties of undefined</div>
+                    <pre><code><span class="comment">// ❌ データが空のときクラッシュする</span>
+<span class="kw">const</span> data = JSON.<span class="fn">parse</span>(localStorage.<span class="fn">getItem</span>(<span class="str">"key"</span>));
+console.<span class="fn">log</span>(data.points); <span class="comment">// getItem が null を返すとエラー</span>
+
+<span class="comment">// ✅ nullチェックをしてから使う</span>
+<span class="kw">const</span> raw = localStorage.<span class="fn">getItem</span>(<span class="str">"key"</span>);
+<span class="kw">const</span> data = raw ? JSON.<span class="fn">parse</span>(raw) : <span class="fn">defaults</span>();
+<span class="comment">// raw が null なら defaults() で初期値を返す</span></code></pre>
+
+                    <h4>よくあるミス②：イベントが2重登録される</h4>
+                    <div class="warn">⚠️ ボタンを押すと処理が2回・3回実行される</div>
+                    <pre><code><span class="comment">// ❌ renderTasks() を呼ぶたびにonclickが増える</span>
+<span class="kw">function</span> <span class="fn">renderTasks</span>() {
+  tasks.<span class="fn">forEach</span>(t =&gt; {
+    <span class="kw">const</span> btn = document.<span class="fn">createElement</span>(<span class="str">"button"</span>);
+    btn.onclick = () =&gt; <span class="fn">complete</span>(t); <span class="comment">// 毎回新しく作るのでOK</span>
+    list.<span class="fn">appendChild</span>(btn);
+  });
+}
+<span class="comment">// ✅ innerHTML をリセットしてから再描画すれば二重登録しない</span>
+list.innerHTML = <span class="str">""</span>; <span class="comment">// 先にクリア</span></code></pre>
+
+                    <h4>デバッグの基本：ブラウザ開発者ツール</h4>
+                    <ul class="step-list">
+                      <li><span class="step-num">1</span><span><kbd>F12</kbd> を押して開発者ツールを開く</span></li>
+                      <li><span class="step-num">2</span><span>「Console」タブ → エラーメッセージの赤字を確認</span></li>
+                      <li><span class="step-num">3</span><span><code>console.log(変数名)</code> をコードに入れて値を確認</span></li>
+                      <li><span class="step-num">4</span><span>「Application」タブ → LocalStorage で保存データを直接確認・編集</span></li>
+                      <li><span class="step-num">5</span><span>「Sources」タブ → ブレークポイントを置いて1行ずつ実行</span></li>
+                    </ul>
+
+                    <h4>次に学ぶべき技術</h4>
+                    <div class="tech-card"><span class="tc-icon">⚛️</span><div class="tc-body"><div class="tc-name">React / Vue.js</div><div class="tc-desc">画面の更新を自動化するUIフレームワーク。大きなアプリに向く。</div></div></div>
+                    <div class="tech-card"><span class="tc-icon">🟢</span><div class="tc-body"><div class="tc-name">Node.js</div><div class="tc-desc">JavaScriptをサーバーサイドで動かす技術。APIやDBと連携できる。</div></div></div>
+                    <div class="tech-card"><span class="tc-icon">🧪</span><div class="tc-body"><div class="tc-name">Jest（テスト）</div><div class="tc-desc">「この関数は正しく動くか」を自動で確認するテストフレームワーク。</div></div></div>
+                  </div>
+                </div>
+              </div>
+            </div><!-- /stepup-list -->
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ② localStorage深堀り -->
+      <div class="deep-item">
+        <button class="deep-toggle" onclick="toggleDeep(this)">
+          <span>💾 localStorage深堀り — JSON・バックアップの仕組みを理解する</span>
+          <span class="arrow">▼</span>
+        </button>
+        <div class="deep-body">
+          <div class="deep-body-inner">
+
+            <h3>localStorageとは何か</h3>
+            <p>ブラウザが持つ「キーと値のペアを保存するメモ帳」です。ページを閉じても消えません。容量は約5MB。</p>
+            <pre><code><span class="comment">// 保存（値は必ず文字列）</span>
+localStorage.<span class="fn">setItem</span>(<span class="str">"myKey"</span>, <span class="str">"hello"</span>);
+
+<span class="comment">// 読み込み</span>
+localStorage.<span class="fn">getItem</span>(<span class="str">"myKey"</span>);  <span class="comment">// → "hello"</span>
+
+<span class="comment">// 削除</span>
+localStorage.<span class="fn">removeItem</span>(<span class="str">"myKey"</span>);</code></pre>
+
+            <h3>JSONとは何か</h3>
+            <p>オブジェクト（複雑なデータ）を「文字列」に変換するルール。localStorageは文字列しか保存できないので必須です。</p>
+            <pre><code><span class="comment">// オブジェクト（JS内のデータ）</span>
+<span class="kw">const</span> data = { points: <span class="num-c">150</span>, log: [{ name: <span class="str">"ケース対応"</span>, pt: <span class="num-c">20</span> }] };
+
+<span class="comment">// JSON文字列に変換（保存用）</span>
+<span class="kw">const</span> str = JSON.<span class="fn">stringify</span>(data);
+<span class="comment">// → '{"points":150,"log":[{"name":"ケース対応","pt":20}]}'</span>
+
+<span class="comment">// JSON文字列をオブジェクトに戻す（読み込み用）</span>
+<span class="kw">const</span> obj = JSON.<span class="fn">parse</span>(str);
+<span class="comment">// → { points: 150, log: [...] }</span></code></pre>
+
+            <h3>アプリの保存・読み込みの流れ</h3>
+            <ul class="step-list">
+              <li><span class="step-num">1</span><span>タスク完了 → <code>data.points += 20</code> でオブジェクトを更新</span></li>
+              <li><span class="step-num">2</span><span><code>JSON.stringify(data)</code> で文字列化</span></li>
+              <li><span class="step-num">3</span><span><code>localStorage.setItem("taskGachaData_v2", ...)</code> で保存</span></li>
+              <li><span class="step-num">4</span><span>次回起動時に <code>getItem</code> → <code>JSON.parse</code> で復元</span></li>
+            </ul>
+
+            <h3>バックアップJSONの仕組み</h3>
+            <pre><code><span class="comment">// 書き出し：localStorageの中身をファイルとしてダウンロード</span>
+<span class="kw">function</span> <span class="fn">exportBackup</span>() {
+  <span class="kw">const</span> json = JSON.<span class="fn">stringify</span>(data, <span class="kw">null</span>, <span class="num-c">2</span>); <span class="comment">// 2=見やすくインデント</span>
+  <span class="kw">const</span> blob = <span class="kw">new</span> <span class="fn">Blob</span>([json], { type: <span class="str">"application/json"</span> });
+  <span class="kw">const</span> url  = URL.<span class="fn">createObjectURL</span>(blob);
+  <span class="kw">const</span> a   = document.<span class="fn">createElement</span>(<span class="str">"a"</span>);
+  a.href = url;  a.download = <span class="str">"taskgacha-backup.json"</span>;
+  a.<span class="fn">click</span>();  <span class="comment">// ダウンロード開始</span>
+}</code></pre>
+
+            <div class="point"><div class="label">💡 なぜパス（場所）が変わるとデータが消える？</div>
+            localStorageはURLごとに別管理されます。<br>
+            <code>file:///C:/OneDrive/MyApps/taskgacha.html</code> と<br>
+            <code>file:///C:/Documents/ai-test/taskgacha.html</code> は<br>
+            ブラウザには別アプリに見える → データが別々に保存されます。</div>
+
+            <!-- localStorage ステップアップ -->
+            <div class="stepup-list">
+              <div class="stepup-label">📚 ステップアップ</div>
+
+              <div class="stepup-item">
+                <button class="stepup-toggle" onclick="toggleStepup(this)">
+                  <span>中級：IndexedDB・Cookie・SessionStorage との違い</span>
+                  <span class="badge badge-mid">中級</span>
+                  <span class="sarrow">▼</span>
+                </button>
+                <div class="stepup-body">
+                  <div class="stepup-body-inner">
+                    <h4>ブラウザの保存手段を比べる</h4>
+                    <table>
+                      <tr><th>方法</th><th>容量</th><th>有効期限</th><th>向いている用途</th></tr>
+                      <tr><td><strong>localStorage</strong></td><td>約5MB</td><td>手動削除まで</td><td>設定・ゲームデータ（今回）</td></tr>
+                      <tr><td><strong>sessionStorage</strong></td><td>約5MB</td><td>タブを閉じると消える</td><td>一時的な入力状態</td></tr>
+                      <tr><td><strong>Cookie</strong></td><td>4KB</td><td>設定可能</td><td>ログイン状態・サーバーとの共有</td></tr>
+                      <tr><td><strong>IndexedDB</strong></td><td>数百MB〜</td><td>手動削除まで</td><td>大量データ・画像・ファイル</td></tr>
+                    </table>
+
+                    <h4>IndexedDB の使い所</h4>
+                    <p>今回のアプリは5MB以内に収まるのでlocalStorageで十分ですが、カードが増えたり動画・音声を扱う場合は IndexedDB に移行します。</p>
+                    <pre><code><span class="comment">// IndexedDB の基本（非同期APIのため async/await が必要）</span>
+<span class="kw">const</span> db = <span class="kw">await</span> <span class="fn">openDB</span>(<span class="str">"myApp"</span>, <span class="num-c">1</span>, {
+  upgrade(db) { db.<span class="fn">createObjectStore</span>(<span class="str">"cards"</span>, { keyPath: <span class="str">"id"</span> }); }
+});
+<span class="kw">await</span> db.<span class="fn">put</span>(<span class="str">"cards"</span>, { id: <span class="str">"c01"</span>, rarity: <span class="str">"SSR"</span> });
+<span class="kw">const</span> card = <span class="kw">await</span> db.<span class="fn">get</span>(<span class="str">"cards"</span>, <span class="str">"c01"</span>);</code></pre>
+
+                    <h4>JSON設計のコツ</h4>
+                    <p>保存するデータの構造（スキーマ）はあとから変更しにくいため、最初から考えておくことが重要です。</p>
+                    <pre><code><span class="comment">// ❌ 悪い例：フラットすぎて拡張しにくい</span>
+{ points: <span class="num-c">150</span>, card1: <span class="str">"c01"</span>, card2: <span class="str">"c02"</span> }
+
+<span class="comment">// ✅ 良い例：配列・オブジェクトで構造化</span>
+{
+  points: <span class="num-c">150</span>,
+  owned: { <span class="str">"c01"</span>: <span class="num-c">2</span>, <span class="str">"c02"</span>: <span class="num-c">1</span> }, <span class="comment">// カードID→枚数</span>
+  log: [{ ts: <span class="num-c">1700000000</span>, name: <span class="str">"ケース対応"</span>, pt: <span class="num-c">20</span> }]
+}</code></pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="stepup-item">
+                <button class="stepup-toggle" onclick="toggleStepup(this)">
+                  <span>上級：よくあるミスとデバッグ・クラウド同期への道</span>
+                  <span class="badge badge-adv">上級</span>
+                  <span class="sarrow">▼</span>
+                </button>
+                <div class="stepup-body">
+                  <div class="stepup-body-inner">
+                    <h4>よくあるミス①：JSON.parse が失敗する</h4>
+                    <div class="warn">⚠️ SyntaxError: Unexpected token u in JSON at position 0</div>
+                    <pre><code><span class="comment">// ❌ getItem が null のまま parse するとクラッシュ</span>
+<span class="kw">const</span> data = JSON.<span class="fn">parse</span>(localStorage.<span class="fn">getItem</span>(<span class="str">"key"</span>));
+
+<span class="comment">// ✅ try-catch でエラーを捕まえる</span>
+<span class="kw">function</span> <span class="fn">load</span>() {
+  <span class="kw">try</span> {
+    <span class="kw">const</span> d = JSON.<span class="fn">parse</span>(localStorage.<span class="fn">getItem</span>(<span class="str">"key"</span>));
+    <span class="kw">if</span> (d &amp;&amp; d.points !== <span class="kw">undefined</span>) <span class="kw">return</span> d;
+  } <span class="kw">catch</span> (e) { <span class="comment">/* 壊れていたら無視 */</span> }
+  <span class="kw">return</span> <span class="fn">defaults</span>(); <span class="comment">// 初期値にフォールバック</span>
+}</code></pre>
+
+                    <h4>よくあるミス②：5MBを超えてQuotaExceededError</h4>
+                    <div class="warn">⚠️ QuotaExceededError: Setting the value exceeded the quota</div>
+                    <pre><code><span class="comment">// 対策：保存前にサイズを確認する</span>
+<span class="kw">function</span> <span class="fn">getSizeKB</span>() {
+  <span class="kw">const</span> str = JSON.<span class="fn">stringify</span>(data);
+  <span class="kw">return</span> (str.length * <span class="num-c">2</span> / <span class="num-c">1024</span>).<span class="fn">toFixed</span>(<span class="num-c">1</span>) + <span class="str">"KB"</span>;
+}
+<span class="comment">// 対策：古いログを自動削除する（アプリでも実装済み）</span>
+data.log = data.log.<span class="fn">filter</span>(e =&gt; e.ts &gt; Date.<span class="fn">now</span>() - <span class="num-c">365</span>*<span class="num-c">86400000</span>);</code></pre>
+
+                    <h4>クラウド同期への発展</h4>
+                    <div class="tech-card"><span class="tc-icon">🔥</span><div class="tc-body"><div class="tc-name">Firebase Realtime DB / Firestore</div><div class="tc-desc">Googleのクラウドデータベース。無料枠あり。localStorageをこれに置き換えると複数端末リアルタイム同期が実現できる。</div></div></div>
+                    <div class="tech-card"><span class="tc-icon">☁️</span><div class="tc-body"><div class="tc-name">Supabase</div><div class="tc-desc">オープンソース版Firebase。PostgreSQLベースで本格的なDB機能を無料で使える。</div></div></div>
+                    <div class="tech-card"><span class="tc-icon">📡</span><div class="tc-body"><div class="tc-name">REST API（自作バックエンド）</div><div class="tc-desc">Node.js + Express などでAPIサーバーを立て、データをサーバーに保存する本格構成。</div></div></div>
+                  </div>
+                </div>
+              </div>
+            </div><!-- /stepup-list -->
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ③ CSS深堀り -->
+      <div class="deep-item">
+        <button class="deep-toggle" onclick="toggleDeep(this)">
+          <span>🎨 CSS深堀り — アニメーションやダークモードの書き方</span>
+          <span class="arrow">▼</span>
+        </button>
+        <div class="deep-body">
+          <div class="deep-body-inner">
+
+            <h3>① ダークモード自動切り替え</h3>
+            <p>OSの設定を検知して色を自動で変えます。CSS変数と組み合わせることで、1箇所書き換えるだけで全体に反映されます。</p>
+            <pre><code><span class="comment">/* ライトモード（デフォルト） */</span>
+:<span class="fn">root</span> {
+  --bg: <span class="str">#f7f6f2</span>;
+  --text: <span class="str">#222</span>;
+  --accent: <span class="str">#6c4ad6</span>;
+}
+
+<span class="comment">/* ダークモード（OSがダークのとき自動適用） */</span>
+@<span class="kw">media</span> (prefers-color-scheme: dark) {
+  :<span class="fn">root</span> {
+    --bg: <span class="str">#1c1c1a</span>;    <span class="comment">/* 同じ変数名で上書きするだけ */</span>
+    --text: <span class="str">#f2f1ec</span>;
+    --accent: <span class="str">#9b7df0</span>; <span class="comment">/* 暗い背景に合わせ少し明るく */</span>
+  }
+}
+
+<span class="comment">/* あとは var() で使うだけ。ライト/ダーク自動対応 */</span>
+.<span class="fn">card</span> { background: <span class="fn">var</span>(--bg); color: <span class="fn">var</span>(--text); }</code></pre>
+
+            <h3>② カードフリップアニメーション</h3>
+            <p><code>@keyframes</code> でアニメーションの動きを定義し、要素に <code>animation</code> で適用します。</p>
+            <pre><code><span class="comment">/* ① アニメーションの動きを定義 */</span>
+@<span class="kw">keyframes</span> flipin {
+  <span class="num-c">0%</span>   {
+    transform: <span class="fn">rotateY</span>(<span class="num-c">90deg</span>) <span class="fn">scale</span>(<span class="num-c">.8</span>);
+    opacity: <span class="num-c">0</span>;  <span class="comment">/* 横から & 小さく & 透明から */</span>
+  }
+  <span class="num-c">100%</span> {
+    transform: <span class="fn">rotateY</span>(<span class="num-c">0deg</span>)  <span class="fn">scale</span>(<span class="num-c">1</span>);
+    opacity: <span class="num-c">1</span>;  <span class="comment">/* 正面 & 等倍 & 不透明へ */</span>
+  }
+}
+
+<span class="comment">/* ② 要素に適用（.6s = 0.6秒かけて） */</span>
+.<span class="fn">bigcard</span> {
+  animation: flipin <span class="num-c">.6s</span> <span class="fn">cubic-bezier</span>(.2,.8,.3,1);
+}</code></pre>
+
+            <h3>③ SSRのホログラム演出</h3>
+            <p>グラデーションをアニメーションで動かすことでキラキラ感を出しています。</p>
+            <pre><code">@<span class="kw">keyframes</span> holo {
+  <span class="num-c">0%</span>   { background-position: <span class="num-c">0%</span>   <span class="num-c">50%</span>; }
+  <span class="num-c">50%</span>  { background-position: <span class="num-c">100%</span> <span class="num-c">50%</span>; }
+  <span class="num-c">100%</span> { background-position: <span class="num-c">0%</span>   <span class="num-c">50%</span>; }
+}
+
+.<span class="fn">bigcard</span>.<span class="fn">SSR</span> {
+  background: <span class="fn">linear-gradient</span>(135deg,
+    <span class="str">#f0a417</span>, <span class="str">#e85cc0</span> 40%, <span class="str">#5b9be8</span> 70%, <span class="str">#3ad6c0</span>
+  );
+  background-size: <span class="num-c">300%</span> <span class="num-c">300%</span>; <span class="comment">/* 大きくして動かす余地を作る */</span>
+  animation: holo <span class="num-c">3s</span> ease infinite; <span class="comment">/* ループ再生 */</span>
+}</code></pre>
+
+            <h3>④ Gridレイアウトの仕組み</h3>
+            <pre><code">.<span class="fn">grid</span> {
+  display: grid;
+  grid-template-columns: <span class="fn">repeat</span>(auto-fill, <span class="fn">minmax</span>(<span class="num-c">130px</span>, <span class="num-c">1fr</span>));
+  <span class="comment">/*                       ↑自動で列数を決める  ↑最小130px、余りは均等 */</span>
+  gap: <span class="num-c">11px</span>; <span class="comment">/* カード間の隙間 */</span>
+}</code></pre>
+            <p>画面が広ければ4列、狭ければ2列と自動調整されます。レスポンシブデザインの代表的な書き方です。</p>
+
+            <div class="point"><div class="label">💡 cubic-bezier とは？</div>
+            アニメーションの「速度の変化」を制御する関数。<code>cubic-bezier(.2,.8,.3,1)</code> は最初ゆっくり・中盤速く・最後に少しバウンドする動きです。<a href="https://cubic-bezier.com" target="_blank" style="color:var(--accent)">cubic-bezier.com</a> でビジュアルで試せます。</div>
+
+            <!-- CSS ステップアップ -->
+            <div class="stepup-list">
+              <div class="stepup-label">📚 ステップアップ</div>
+
+              <div class="stepup-item">
+                <button class="stepup-toggle" onclick="toggleStepup(this)">
+                  <span>中級：Flexbox・疑似要素・CSS変数の応用</span>
+                  <span class="badge badge-mid">中級</span>
+                  <span class="sarrow">▼</span>
+                </button>
+                <div class="stepup-body">
+                  <div class="stepup-body-inner">
+                    <h4>Flexbox（横並び・縦並びの制御）</h4>
+                    <p>アプリのタスク行・ボタン配置に使っています。</p>
+                    <pre><code">.<span class="fn">task</span> {
+  display: flex;           <span class="comment">/* 子要素を横並びに */</span>
+  align-items: center;     <span class="comment">/* 縦方向：中央揃え */</span>
+  gap: <span class="num-c">10px</span>;              <span class="comment">/* 要素間の隙間 */</span>
+}
+.<span class="fn">task</span> .<span class="fn">name</span> { flex: <span class="num-c">1</span>; }  <span class="comment">/* 残りのスペースを全部使う */</span></code></pre>
+
+                    <h4>疑似要素（::before / ::after）</h4>
+                    <p>HTMLを追加せずにCSSだけで装飾を追加できます。</p>
+                    <pre><code"><span class="comment">/* ボタンの左に装飾を追加する例 */</span>
+.<span class="fn">btn</span>::before {
+  content: <span class="str">"✨"</span>;      <span class="comment">/* 表示する内容 */</span>
+  margin-right: <span class="num-c">6px</span>; <span class="comment">/* 本文との隙間 */</span>
+}</code></pre>
+
+                    <h4>CSS変数の計算への応用</h4>
+                    <pre><code"><span class="comment">/* 変数同士を calc() で計算できる */</span>
+:<span class="fn">root</span> { --spacing: <span class="num-c">8px</span>; }
+
+.<span class="fn">card</span> {
+  padding: <span class="fn">calc</span>(<span class="fn">var</span>(--spacing) * <span class="num-c">2</span>);  <span class="comment">/* = 16px */</span>
+  margin-bottom: <span class="fn">var</span>(--spacing);         <span class="comment">/* = 8px */</span>
+}
+<span class="comment">/* --spacing を変えるだけで全体の余白が一括変更される */</span></code></pre>
+
+                    <h4>transition（スムーズな状態変化）</h4>
+                    <pre><code">.<span class="fn">btn</span> {
+  background: <span class="fn">var</span>(--accent);
+  transition: background <span class="num-c">.15s</span>, transform <span class="num-c">.05s</span>;
+  <span class="comment">/* ↑ 変化するプロパティと所要時間を指定 */</span>
+}
+.<span class="fn">btn</span>:hover  { background: <span class="fn">var</span>(--accent-d); }  <span class="comment">/* ホバーで暗く */</span>
+.<span class="fn">btn</span>:active { transform: <span class="fn">scale</span>(<span class="num-c">.96</span>); }       <span class="comment">/* 押すと縮む */</span></code></pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="stepup-item">
+                <button class="stepup-toggle" onclick="toggleStepup(this)">
+                  <span>上級：よくあるミスとデバッグ・次のフレームワーク</span>
+                  <span class="badge badge-adv">上級</span>
+                  <span class="sarrow">▼</span>
+                </button>
+                <div class="stepup-body">
+                  <div class="stepup-body-inner">
+                    <h4>よくあるミス①：詳細度の競合</h4>
+                    <div class="warn">⚠️ スタイルを書いたのに反映されない</div>
+                    <pre><code"><span class="comment">/* 詳細度（Specificity）: idが最も強い */</span>
+#header .btn { color: red; }    <span class="comment">/* 詳細度: 高 */</span>
+.btn          { color: blue; }  <span class="comment">/* 詳細度: 低 → 負ける */</span>
+
+<span class="comment">/* 確認方法: ブラウザのDevToolsで打ち消し線が入っているCSSを探す */</span>
+<span class="comment">/* 対策: idセレクタは使わず class で統一する */</span></code></pre>
+
+                    <h4>よくあるミス②：aspect-ratio が効かない</h4>
+                    <div class="warn">⚠️ カードが縦長にならず潰れる</div>
+                    <pre><code"><span class="comment">/* aspect-ratio は幅が決まっていないと機能しないことがある */</span>
+.<span class="fn">mini</span> {
+  aspect-ratio: <span class="num-c">3</span>/<span class="num-c">4</span>;   <span class="comment">/* ← これだけでは不十分な場合がある */</span>
+  width: <span class="num-c">100%</span>;         <span class="comment">/* ← 幅を明示するとちゃんと効く */</span>
+}</code></pre>
+
+                    <h4>デバッグ：CSSの問題を見つける方法</h4>
+                    <ul class="step-list">
+                      <li><span class="step-num">1</span><span><kbd>F12</kbd> → 「Elements」タブで要素をクリック</span></li>
+                      <li><span class="step-num">2</span><span>右パネルの「Styles」で適用されているCSSを確認</span></li>
+                      <li><span class="step-num">3</span><span>打ち消し線が入ったCSSが「負けているスタイル」</span></li>
+                      <li><span class="step-num">4</span><span>「Computed」タブで実際に計算された最終値を確認</span></li>
+                    </ul>
+
+                    <h4>次に学ぶべき技術</h4>
+                    <div class="tech-card"><span class="tc-icon">🌊</span><div class="tc-body"><div class="tc-name">Tailwind CSS</div><div class="tc-desc">クラス名を並べるだけでスタイルが当たるユーティリティファーストCSS。現在主流のアプローチ。</div></div></div>
+                    <div class="tech-card"><span class="tc-icon">💅</span><div class="tc-body"><div class="tc-name">CSS Modules / CSS-in-JS</div><div class="tc-desc">コンポーネント単位でCSSを管理する手法。React等のフレームワークと組み合わせる。</div></div></div>
+                    <div class="tech-card"><span class="tc-icon">🎭</span><div class="tc-body"><div class="tc-name">Sass / SCSS</div><div class="tc-desc">CSSの拡張言語。ネスト記法・ミックスイン・ループが使えて大規模なスタイル管理が楽になる。</div></div></div>
+                  </div>
+                </div>
+              </div>
+            </div><!-- /stepup-list -->
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ④ AI画像生成深堀り -->
+      <div class="deep-item">
+        <button class="deep-toggle" onclick="toggleDeep(this)">
+          <span>🤖 AI画像生成深堀り — プロンプト設計・Base64の仕組み</span>
+          <span class="arrow">▼</span>
+        </button>
+        <div class="deep-body">
+          <div class="deep-body-inner">
+
+            <h3>プロンプト設計の構造</h3>
+            <p>AI画像生成は「指示の質＝画像の質」です。アプリでは以下の要素を毎回組み合わせています。</p>
+            <table>
+              <tr><th>要素</th><th>内容</th><th>実際の指示例</th></tr>
+              <tr><td>形式</td><td>縦横比・カードサイズ</td><td><code>3:4 portrait aspect ratio</code></td></tr>
+              <tr><td>キャラクター</td><td>職業・装備・レア度感</td><td><code>rookie WARRIOR, simple starter gear</code></td></tr>
+              <tr><td>ポーズ</td><td>具体的な動作</td><td><code>swinging sword forward dynamically</code></td></tr>
+              <tr><td>背景</td><td>日本の地名（レア度で変化）</td><td><code>Shibuya Tokyo, scramble crossing</code></td></tr>
+              <tr><td>画風</td><td>レア度で段階的に変化</td><td>N=<code>flat anime cel-shading</code> → SSR=<code>photorealistic</code></td></tr>
+              <tr><td>地名ラベル</td><td>必ず表示するよう強調</td><td><code>IMPORTANT: clearly display '渋谷(東京都)'</code></td></tr>
+            </table>
+
+            <h3>レア度別の画風の変え方</h3>
+            <pre><code"><span class="comment">// N（ノーマル）: アニメ調・シンプル</span>
+<span class="str">"ART STYLE: flat simple anime cel-shading,
+ bright pop colors, clean lines"</span>
+
+<span class="comment">// R（レア）: 鮮やか・動的</span>
+<span class="str">"ART STYLE: polished detailed anime illustration,
+ high saturation, vivid, dynamic"</span>
+
+<span class="comment">// SR（スーパーレア）: 劇画調・重厚</span>
+<span class="str">"ART STYLE: semi-realistic dramatic gekiga
+ painterly style, rich shadows, cinematic"</span>
+
+<span class="comment">// SSR（最高レア）: フォトリアル・映画的</span>
+<span class="str">"ART STYLE: photorealistic near-photographic,
+ cinematic film-quality, volumetric lighting"</span></code></pre>
+
+            <h3>Base64の仕組み</h3>
+            <p>画像（バイナリデータ）を「テキスト文字だけ」で表現する変換方式です。A〜Z / a〜z / 0〜9 / + / / の64文字だけを使います。</p>
+            <pre><code"><span class="comment">// 通常：画像は外部ファイルを参照</span>
+&lt;img src=<span class="str">"card01.webp"</span>&gt;  <span class="comment">← ファイルがないと表示されない</span>
+
+<span class="comment">// Base64：データをそのまま文字列として埋め込む</span>
+&lt;img src=<span class="str">"data:image/webp;base64,UklGRi..."</span>&gt;
+<span class="comment">//                              ↑ 数万文字の文字列が続く</span></code></pre>
+
+            <h3>圧縮が必要な理由</h3>
+            <ul class="step-list">
+              <li><span class="step-num">1</span><span>AIが生成する画像は高解像度で 1枚あたり約0.5〜1MB</span></li>
+              <li><span class="step-num">2</span><span>18枚 × 1MB = 約18MB → ブラウザが重くなる</span></li>
+              <li><span class="step-num">3</span><span>Pythonのpillowで512px・WebP品質80に圧縮 → 1枚 約40KB</span></li>
+              <li><span class="step-num">4</span><span>18枚 × 40KB = 約0.7MB → 問題なし ✅</span></li>
+            </ul>
+
+            <h3>Pythonでの圧縮コード（参考）</h3>
+            <pre><code"><span class="kw">from</span> PIL <span class="kw">import</span> Image
+
+img = Image.<span class="fn">open</span>(<span class="str">"card01_original.webp"</span>)
+
+<span class="comment"># 縦横比を保ちつつ512px以内にリサイズ</span>
+img.<span class="fn">thumbnail</span>((<span class="num-c">512</span>, <span class="num-c">512</span>))
+
+<span class="comment"># WebP形式で品質80で保存（ファイルサイズ激減）</span>
+img.<span class="fn">save</span>(<span class="str">"card01.webp"</span>, <span class="str">"WEBP"</span>, quality=<span class="num-c">80</span>)</code></pre>
+
+            <div class="point"><div class="label">💡 WebPとは？</div>
+            Googleが開発した画像フォーマット。JPEGと同じ画質でファイルサイズが約25〜34%小さくなります。モダンなブラウザはすべて対応済みで、Webアプリに最適です。</div>
+
+            <!-- AI ステップアップ -->
+            <div class="stepup-list">
+              <div class="stepup-label">📚 ステップアップ</div>
+
+              <div class="stepup-item">
+                <button class="stepup-toggle" onclick="toggleStepup(this)">
+                  <span>中級：プロンプトの精度を上げるテクニック</span>
+                  <span class="badge badge-mid">中級</span>
+                  <span class="sarrow">▼</span>
+                </button>
+                <div class="stepup-body">
+                  <div class="stepup-body-inner">
+                    <h4>NG プロンプト vs OK プロンプト</h4>
+                    <table>
+                      <tr><th>NG（曖昧）</th><th>OK（具体的）</th></tr>
+                      <tr><td>warrior in Japan</td><td>young rookie warrior with a short sword and cloth armor, mid-action swinging forward</td></tr>
+                      <tr><td>anime style</td><td>flat simple anime cel-shading, bright pop colors, clean outlines, energetic mood</td></tr>
+                      <tr><td>Tokyo background</td><td>Shibuya Tokyo scramble crossing with neon signs and crowds at dusk</td></tr>
+                    </table>
+
+                    <h4>確実に縦長（3:4）にするテクニック</h4>
+                    <p>AIはアスペクト比指示を無視しがちなため、複数の方法で強調します。</p>
+                    <pre><code"><span class="comment">// プロンプト内での強調（複数箇所に書く）</span>
+<span class="str">"Vertical trading card illustration,
+ 3:4 portrait aspect ratio,
+ IMPORTANT: portrait orientation only,
+ taller than wide, vertical format"</span>
+
+<span class="comment">// APIパラメータで指定できる場合はこちらも使う</span>
+{ width: <span class="num-c">512</span>, height: <span class="num-c">682</span> }  <span class="comment">// 3:4 = 512 × 682</span></code></pre>
+
+                    <h4>スタイルの一貫性を保つコツ</h4>
+                    <p>18枚を通してキャラクターのスタイルを統一するには、共通の「スタイルアンカー」をプロンプト先頭に毎回入れます。</p>
+                    <pre><code"><span class="comment">// 全カード共通のプレフィックス</span>
+<span class="kw">const</span> BASE = <span class="str">"Vertical trading card illustration,
+  3:4 portrait aspect ratio,
+  Japanese fantasy card game art,
+  full body character centered,
+  place name label clearly displayed on card."</span>;
+
+<span class="comment">// 個別カード固有の部分だけ変える</span>
+<span class="kw">const</span> prompt = BASE + <span class="str">` CHARACTER: ${job}. POSE: ${pose}.
+  SETTING: ${place}. ART STYLE: ${style}.`</span>;</code></pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="stepup-item">
+                <button class="stepup-toggle" onclick="toggleStepup(this)">
+                  <span>上級：よくあるミスとデバッグ・APIの直接活用</span>
+                  <span class="badge badge-adv">上級</span>
+                  <span class="sarrow">▼</span>
+                </button>
+                <div class="stepup-body">
+                  <div class="stepup-body-inner">
+                    <h4>よくあるミス①：Base64が壊れて画像が表示されない</h4>
+                    <div class="warn">⚠️ 画像が表示されず壊れたアイコンになる</div>
+                    <pre><code"><span class="comment">// 原因: 改行・スペースが混入している</span>
+<span class="comment">// ❌ Base64文字列に改行が入るとブラウザが認識できない</span>
+src=<span class="str">"data:image/webp;base64,UklGR
+i5CAAAB..."</span>  <span class="comment">// ← 途中に改行 NG</span>
+
+<span class="comment">// ✅ Pythonで正しく変換する方法</span>
+<span class="kw">import</span> base64
+<span class="kw">with</span> <span class="fn">open</span>(<span class="str">"card.webp"</span>, <span class="str">"rb"</span>) <span class="kw">as</span> f:
+    b64 = base64.<span class="fn">b64encode</span>(f.<span class="fn">read</span>()).<span class="fn">decode</span>(<span class="str">"utf-8"</span>)
+    <span class="comment"># decode("utf-8") → 改行なしの純粋な文字列になる</span></code></pre>
+
+                    <h4>よくあるミス②：Windowsで日本語のUnicodeエラー</h4>
+                    <div class="warn">⚠️ UnicodeDecodeError: 'cp1252' codec can't decode byte</div>
+                    <pre><code"><span class="comment"># 原因: WindowsのPythonはデフォルトでcp1252（欧文）で読む
+# ✅ 対策①: JSONに日本語を入れず ensure_ascii=True で保存</span>
+<span class="kw">import</span> json
+data = { <span class="str">"place"</span>: <span class="str">"渋谷"</span> }
+json_str = json.<span class="fn">dumps</span>(data, ensure_ascii=<span class="kw">True</span>)
+<span class="comment"># → {"place": "渋谷"}  ← ASCII文字だけになる</span>
+
+<span class="comment"># ✅ 対策②: ファイルを開くとき encoding 指定</span>
+<span class="kw">with</span> <span class="fn">open</span>(<span class="str">"config.json"</span>, encoding=<span class="str">"utf-8"</span>) <span class="kw">as</span> f:
+    data = json.<span class="fn">load</span>(f)</code></pre>
+
+                    <h4>次に学ぶべき技術</h4>
+                    <div class="tech-card"><span class="tc-icon">🤖</span><div class="tc-body"><div class="tc-name">Stable Diffusion（ローカル生成）</div><div class="tc-desc">自分のPCで画像を生成できるOSSモデル。APIキーが不要でコスト0。Automatic1111などのUIで試せる。</div></div></div>
+                    <div class="tech-card"><span class="tc-icon">🐍</span><div class="tc-body"><div class="tc-name">Python × Pillow / OpenCV</div><div class="tc-desc">画像の自動加工・クロップ・テキスト合成をコードで制御。カード枠や地名ラベルをプログラムで追加できる。</div></div></div>
+                    <div class="tech-card"><span class="tc-icon">🎨</span><div class="tc-body"><div class="tc-name">DALL·E / Midjourney / Firefly</div><div class="tc-desc">各社の画像生成API。プロンプトの文化や得意なスタイルが異なるため目的に合わせて使い分ける。</div></div></div>
+                  </div>
+                </div>
+              </div>
+            </div><!-- /stepup-list -->
+
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /deep-list -->
+  </div>
+
+  <div class="footer">
+    <p>タスク達成ガチャアプリ学習メモ　|　2026-06-17作成</p>
+    <p>このファイル: <code>OneDrive - TrendMicro\MyApps\web-tech-guide.html</code></p>
+  </div>
+
+</div>
+<script>
+function toggleDeep(btn) {
+  const body = btn.nextElementSibling;
+  const isOpen = btn.classList.contains('open');
+  btn.classList.toggle('open', !isOpen);
+  body.classList.toggle('open', !isOpen);
+}
+function toggleStepup(btn) {
+  const body = btn.nextElementSibling;
+  const isOpen = btn.classList.contains('open');
+  btn.classList.toggle('open', !isOpen);
+  body.classList.toggle('open', !isOpen);
+}
+</script>
+</body>
+</html>

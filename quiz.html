@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="製品クイズ">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#d8392f">
+<title>モバイル製品知識クイズ</title>
+<style>
+  :root{
+    --bg:#f4f3ef; --surface:#ffffff; --text:#222; --muted:#6b6b6b;
+    --border:#e2e1da; --accent:#d8392f; --accent-soft:#fbeae8;
+    --ok-bg:#e7f4ec; --ok-bd:#7cc79b; --ok-tx:#1f7a44;
+    --ng-bg:#fcecec; --ng-bd:#e89a9a; --ng-tx:#b53030;
+    --track:#ece9e1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#1c1c1a; --surface:#262624; --text:#f2f1ec; --muted:#a3a39c;
+      --border:#3a3a37; --accent:#f06a60; --accent-soft:#3a2422;
+      --ok-bg:#1e3a2a; --ok-bd:#3a7a52; --ok-tx:#7fd6a0;
+      --ng-bg:#3a2222; --ng-bd:#7a3a3a; --ng-tx:#f0a0a0;
+      --track:#33332f;
+    }
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Noto Sans JP",sans-serif;
+    background:var(--bg); color:var(--text);
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    line-height:1.6;
+  }
+  .wrap{max-width:680px; margin:0 auto; padding:20px 16px 40px;}
+  .app-head{display:flex; align-items:center; gap:10px; margin:6px 0 18px;}
+  .app-head .logo{width:36px; height:36px; border-radius:9px; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:600;}
+  .app-head h1{font-size:19px; font-weight:600; margin:0;}
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:22px 20px 24px;}
+  .lead{font-size:14px; color:var(--muted); margin:0 0 18px;}
+  .row-between{display:flex; justify-content:space-between; align-items:center;}
+  .small{font-size:13px; color:var(--muted);}
+  .track{height:7px; background:var(--track); border-radius:999px; overflow:hidden; margin:14px 0 20px;}
+  .track > div{height:100%; width:0%; background:var(--accent); border-radius:999px; transition:width .3s;}
+  .question{font-size:19px; font-weight:600; line-height:1.55; margin:0 0 18px;}
+  .choices{display:flex; flex-direction:column; gap:11px;}
+  button.choice, button.genre, button.action{
+    font:inherit; cursor:pointer; width:100%; text-align:left;
+    background:var(--surface); color:var(--text);
+    border:1.5px solid var(--border); border-radius:12px;
+    padding:14px 16px; font-size:16px; transition:background .15s,border-color .15s,transform .05s;
+  }
+  button.choice:active, button.genre:active, button.action:active{transform:scale(.985);}
+  button.choice:hover, button.genre:hover{border-color:#bdbcb3;}
+  button.genre{display:flex; justify-content:space-between; align-items:center;}
+  .explain{display:none; font-size:14.5px; line-height:1.65; color:var(--text); background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:13px 15px; margin-top:16px;}
+  .footer-row{display:flex; justify-content:flex-end; margin-top:18px;}
+  button.action{width:auto; background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; padding:11px 20px; border-radius:11px;}
+  .result{text-align:center; padding:34px 20px;}
+  .result .emoji{font-size:46px;}
+  .result .score{font-size:34px; font-weight:700; margin:10px 0 4px;}
+  .result .grade{font-size:15px; color:var(--muted); margin:0 0 22px;}
+  .result-actions{display:flex; gap:10px; justify-content:center; flex-wrap:wrap;}
+  button.ghost{background:transparent; color:var(--text); border:1.5px solid var(--border); font-weight:500;}
+  .hidden{display:none;}
+  .badge{font-size:13px; color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="app-head">
+    <div class="logo">Q</div>
+    <h1>モバイル製品知識クイズ</h1>
+  </div>
+
+  <!-- ジャンル選択 -->
+  <div id="start" class="card">
+    <p class="lead">ジャンルを選んでスタート。4択をタップして答えると、すぐに正誤と解説が表示されます。新人トレーニング用です。</p>
+    <div id="genres" class="choices"></div>
+  </div>
+
+  <!-- 出題 -->
+  <div id="quiz" class="card hidden">
+    <div class="row-between">
+      <span id="genre-label" class="small"></span>
+      <span id="progress" class="small"></span>
+    </div>
+    <div class="track"><div id="bar"></div></div>
+    <p id="question" class="question"></p>
+    <div id="choices" class="choices"></div>
+    <p id="explain" class="explain"></p>
+    <div class="footer-row">
+      <button id="next" class="action hidden"></button>
+    </div>
+  </div>
+
+  <!-- 結果 -->
+  <div id="result" class="card hidden">
+    <div class="result">
+      <div class="emoji">🏆</div>
+      <p class="small" style="margin:14px 0 0;">あなたのスコア</p>
+      <p id="score" class="score"></p>
+      <p id="grade" class="grade"></p>
+      <div class="result-actions">
+        <button id="retry" class="action">同じジャンルで再挑戦</button>
+        <button id="home" class="action ghost">ジャンル選択へ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const BANK = {
+  vbm: { name: "VBM / iVBM（ウイルスバスター モバイル）", questions: [
+    { q:"トライアルユーザライセンス（体験版）の有効期間は？", choices:["7日間","14日間","30日間","90日間"], answer:2, explain:"体験版は30日間のみ有効。再インストールしても期限は更新されず、サポートは基本対象外です。" },
+    { q:"AIで不正アプリのインストールを未然に防ぐ機能が使えるのは？", choices:["iOS版のみ","Android版のみ","両方とも対応","どちらも非対応"], answer:1, explain:"不正・迷惑アプリからの保護はAndroid版（VBM）のみの機能です。" },
+    { q:"アプリ内課金ライセンス（BAAA）について正しいものは？", choices:["AKポータルから有効化できる","VBM有効化画面で入力できる","AKポータル・有効化画面では入力不可","体験版扱いになる"], answer:2, explain:"BAAA（アプリ内課金）はAKポータルやVBM有効化画面では入力できません。" },
+    { q:"CESSPライセンス（月額版）のC360上の有効期限表示は？", choices:["購入日から1ヶ月後","3000/1/1","9999/12/31","空欄"], answer:1, explain:"CESSPライセンスはC360上で「3000/1/1」と表示されます。「T」から始まるライセンスです。" },
+    { q:"ライセンス情報が紐づき、機種変更後も再有効化できる先は？", choices:["端末のシリアル番号","電話番号","トレンドマイクロアカウント","Googleアカウント"], answer:2, explain:"ライセンスはトレンドマイクロアカウントに紐づくため、機種変更後も再有効化可能です。" },
+    { q:"トレンドマイクロアカウントのパスワード要件は？", choices:["数字のみ4文字","英数字8〜50文字","記号必須6文字","半角20文字固定"], answer:1, explain:"パスワードは半角の英数字8〜50文字。大文字/小文字は区別されます。" },
+    { q:"VBMの保護者による使用制限の保護レベルにないのは？", choices:["低学年（高）","高学年（中）","中高生（低）","大学生（最低）"], answer:3, explain:"保護レベルは低学年(高)・高学年(中)・中高生(低)の3段階。「大学生」レベルはありません。" },
+    { q:"盗難/紛失時の対策機能に含まれないものは？", choices:["リモートロック","リモート消去","シークレットスナップ","端末の初期化代行"], answer:3, explain:"捜索・アラーム・リモートロック/消去・SIMロック・シークレットスナップ等があります。" },
+    { q:"VBTS（トータルセキュリティ）ライセンスについて正しいのは？", choices:["AKポータルから有効化できる","アプリのAK入力から有効化できる","AKポータルから有効化不可","体験版専用"], answer:2, explain:"VBTSはAKポータル・VBMのAK入力いずれからも有効化できません。" }
+  ]},
+  tmvpn: { name: "TMVPN（Trend Micro VPN）", questions: [
+    { q:"TMVPNが対応しているOSは？", choices:["Androidのみ","iOSのみ","Android / iOS 両対応","Windowsのみ"], answer:2, explain:"TMVPNはAndroid版・iOS版の両方が提供されています。" },
+    { q:"TMVPNの主な役割として最も適切なのは？", choices:["ウイルススキャン","通信の暗号化・保護（VPN）","写真の自動バックアップ","端末の高速化"], answer:1, explain:"TMVPNはVPNにより通信を暗号化し、Wi-Fi利用時などの安全性を高める製品です。" },
+    { q:"「Wi-Fi接続時に自動でVPNが有効にならない」はどの分類？", choices:["仕様で発生しない","トラブルシューティング項目として存在","iOSのみの正常動作","Androidのみの正常動作"], answer:1, explain:"Android/iOSとも「Wi-Fi接続時に自動でVPNが有効にならない」は切り分け対象の項目です。" }
+  ]},
+  tmc: { name: "TMC / 詐欺バスター（Trend Micro Check）", questions: [
+    { q:"詐欺バスターに用意されているエディションに含まれないのは？", choices:["無料版","体験版","製品版","永久無償プロ版"], answer:3, explain:"無料版・体験版・製品版に加え「Lite」があります。「永久無償プロ版」はありません。" },
+    { q:"詐欺バスターのディープフェイクスキャン機能は？", choices:["Androidのみ","iOSのみ","Android / iOS 両方に存在","非対応"], answer:2, explain:"ディープフェイクスキャンはAndroid・iOSの両方に機能ページがあります。" },
+    { q:"詐欺バスターがVBM/iVBMと同じ端末にある場合の論点は？", choices:["必ず片方を削除","共存について確認が必要","自動で統合される","ライセンス共有される"], answer:1, explain:"AndroidはVBM、iOSはiVBMとの「共存について」の切り分け項目が用意されています。" }
+  ]}
+};
+
+let curKey=null, list=[], idx=0, score=0, locked=false;
+const $ = id => document.getElementById(id);
+
+function buildGenres(){
+  const box = $("genres"); box.innerHTML = "";
+  Object.keys(BANK).forEach(key => {
+    const b = document.createElement("button");
+    b.className = "genre";
+    b.innerHTML = '<span>'+BANK[key].name+'</span><span class="badge">'+BANK[key].questions.length+'問 ›</span>';
+    b.onclick = () => startGenre(key);
+    box.appendChild(b);
+  });
+}
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function shuffleChoices(item){
+  const order = shuffle(item.choices.map((_, i) => i));
+  return {
+    q: item.q,
+    choices: order.map(i => item.choices[i]),
+    answer: order.indexOf(item.answer),
+    explain: item.explain
+  };
+}
+function startGenre(key){
+  curKey = key;
+  list = shuffle(BANK[key].questions).map(shuffleChoices);
+  idx = 0; score = 0;
+  $("start").classList.add("hidden"); $("result").classList.add("hidden"); $("quiz").classList.remove("hidden");
+  $("genre-label").textContent = BANK[key].name;
+  render();
+}
+function render(){
+  locked = false; const item = list[idx];
+  $("progress").textContent = "第 " + (idx+1) + " / " + list.length + " 問";
+  $("bar").style.width = (idx/list.length*100) + "%";
+  $("question").textContent = item.q;
+  $("explain").style.display = "none"; $("next").classList.add("hidden");
+  const box = $("choices"); box.innerHTML = "";
+  item.choices.forEach((c, i) => {
+    const b = document.createElement("button"); b.className = "choice"; b.textContent = c;
+    b.onclick = () => choose(i); box.appendChild(b);
+  });
+}
+function choose(i){
+  if(locked) return; locked = true;
+  const item = list[idx];
+  const buttons = $("choices").querySelectorAll("button");
+  buttons.forEach((b, bi) => {
+    b.disabled = true;
+    if(bi === item.answer){ b.style.background="var(--ok-bg)"; b.style.borderColor="var(--ok-bd)"; b.style.color="var(--ok-tx)"; }
+    else if(bi === i){ b.style.background="var(--ng-bg)"; b.style.borderColor="var(--ng-bd)"; b.style.color="var(--ng-tx)"; }
+  });
+  if(i === item.answer) score++;
+  const ex = $("explain");
+  ex.textContent = (i === item.answer ? "正解！ " : "不正解。") + item.explain;
+  ex.style.display = "block";
+  $("bar").style.width = ((idx+1)/list.length*100) + "%";
+  $("next").classList.remove("hidden");
+  $("next").textContent = (idx+1 < list.length) ? "次へ →" : "結果を見る →";
+}
+$("next").onclick = () => { idx++; if(idx < list.length){ render(); } else { showResult(); } };
+function showResult(){
+  $("quiz").classList.add("hidden"); $("result").classList.remove("hidden");
+  $("score").textContent = score + " / " + list.length;
+  const pct = score / list.length; let g;
+  if(pct === 1) g = "満点！製品知識バッチリです 🎉";
+  else if(pct >= 0.7) g = "good! あと少しで完璧です";
+  else if(pct >= 0.4) g = "もう一歩。解説を読み返してみましょう";
+  else g = "復習しましょう。資料を確認してから再挑戦を";
+  $("grade").textContent = g;
+}
+$("retry").onclick = () => startGenre(curKey);
+$("home").onclick = () => { $("result").classList.add("hidden"); $("quiz").classList.add("hidden"); $("start").classList.remove("hidden"); };
+buildGenres();
+</script>
+</body>
+</html>

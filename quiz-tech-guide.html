@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>クイズアプリ技術ガイド — quiz.htmlで学ぶWeb開発</title>
+<style>
+  :root {
+    --bg: #f7f6f2; --surface: #ffffff; --text: #222; --muted: #666;
+    --border: #e2e1da; --accent: #d8392f; --soft: #fbeae8;
+    --code-bg: #1e1e2e; --code-text: #cdd6f4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a; --surface: #262624; --text: #f2f1ec; --muted: #a3a39c;
+      --border: #3a3a37; --accent: #f06a60; --soft: #3a2422;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.8;
+    margin: 0; padding: 0;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  .hero { background: linear-gradient(135deg, #d8392f, #e8724a); color: #fff; border-radius: 18px; padding: 32px 28px; margin-bottom: 36px; }
+  .hero h1 { margin: 0 0 8px; font-size: 24px; }
+  .hero p { margin: 0; opacity: .85; font-size: 15px; }
+
+  .toc { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; margin-bottom: 36px; }
+  .toc h2 { margin: 0 0 12px; font-size: 15px; color: var(--muted); font-weight: 600; letter-spacing: .05em; }
+  .toc ol { margin: 0; padding-left: 20px; }
+  .toc li { margin: 6px 0; }
+  .toc a { color: var(--accent); text-decoration: none; font-weight: 500; }
+  .toc a:hover { text-decoration: underline; }
+
+  .section { margin-bottom: 48px; }
+  h2.section-title {
+    font-size: 20px; font-weight: 700; margin: 0 0 18px;
+    display: flex; align-items: center; gap: 10px;
+    padding-bottom: 10px; border-bottom: 2px solid var(--accent);
+  }
+  h2.section-title .num {
+    background: var(--accent); color: #fff; width: 30px; height: 30px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; flex-shrink: 0;
+  }
+  h3 { font-size: 16px; font-weight: 600; margin: 24px 0 8px; color: var(--accent); }
+
+  p { margin: 0 0 14px; }
+  .lead { font-size: 16px; background: var(--soft); border-left: 4px solid var(--accent); padding: 12px 16px; border-radius: 0 10px 10px 0; margin-bottom: 18px; }
+
+  pre {
+    background: var(--code-bg); color: var(--code-text);
+    border-radius: 12px; padding: 18px 20px; overflow-x: auto;
+    font-size: 13.5px; line-height: 1.65; margin: 12px 0 20px;
+    font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+  }
+  code { font-family: inherit; }
+  .comment { color: #6272a4; }
+  .kw { color: #ff79c6; }
+  .str { color: #f1fa8c; }
+  .fn { color: #50fa7b; }
+  .num-c { color: #bd93f9; }
+  .prop { color: #8be9fd; }
+
+  p code, li code {
+    background: var(--soft); color: var(--accent);
+    padding: 2px 7px; border-radius: 5px; font-size: 13px;
+    font-family: "Cascadia Code", "Consolas", monospace;
+  }
+
+  .diagram {
+    background: var(--code-bg); color: var(--code-text);
+    border-radius: 12px; padding: 18px 20px; font-family: monospace;
+    font-size: 13px; line-height: 1.7; margin: 14px 0 20px; overflow-x: auto;
+    white-space: pre;
+  }
+
+  .point { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin: 14px 0; }
+  .point .label { font-size: 12px; font-weight: 700; color: var(--accent); letter-spacing: .08em; margin-bottom: 6px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 14px 0 20px; font-size: 14px; }
+  th { background: var(--soft); color: var(--accent); font-weight: 700; padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+  td { padding: 9px 14px; border: 1px solid var(--border); }
+  tr:nth-child(even) td { background: var(--bg); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .chip { background: var(--soft); color: var(--accent); border-radius: 999px; padding: 4px 14px; font-size: 13px; font-weight: 600; }
+
+  /* アコーディオン */
+  .deep-list { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+  .deep-item { border: 1.5px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .deep-toggle {
+    width: 100%; text-align: left; background: var(--surface); border: none; cursor: pointer;
+    padding: 16px 20px; font: inherit; font-size: 15px; font-weight: 600; color: var(--text);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .deep-toggle .arrow { transition: transform .25s; font-size: 13px; color: var(--muted); }
+  .deep-toggle.open .arrow { transform: rotate(180deg); }
+  .deep-body { max-height: 0; overflow: hidden; transition: max-height .4s cubic-bezier(.4,0,.2,1); }
+  .deep-body.open { max-height: 6000px; }
+  .deep-body-inner { padding: 0 20px 20px; }
+
+  /* ステップアップ */
+  .stepup-section { margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 16px; }
+  .stepup-label { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .06em; margin-bottom: 10px; }
+  .stepup-list { display: flex; flex-direction: column; gap: 8px; }
+  .stepup-item { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .stepup-toggle {
+    width: 100%; text-align: left; background: var(--bg); border: none; cursor: pointer;
+    padding: 12px 16px; font: inherit; font-size: 14px; font-weight: 600; color: var(--text);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .stepup-toggle .badge { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 9px; }
+  .badge-mid { background: #e0f0ff; color: #1a5fa8; }
+  .badge-adv { background: #fff0e0; color: #a85a00; }
+  .stepup-toggle .su-arrow { margin-left: auto; font-size: 12px; color: var(--muted); transition: transform .25s; }
+  .stepup-toggle.open .su-arrow { transform: rotate(180deg); }
+  .stepup-body { max-height: 0; overflow: hidden; transition: max-height .4s cubic-bezier(.4,0,.2,1); }
+  .stepup-body.open { max-height: 4000px; }
+  .stepup-body-inner { padding: 12px 16px 16px; font-size: 14px; line-height: 1.75; }
+  .warn { background: #fff8e0; border-left: 4px solid #e8a417; border-radius: 0 9px 9px 0; padding: 10px 14px; margin: 10px 0; font-size: 13.5px; }
+  @media (prefers-color-scheme: dark) { .warn { background: #2a2410; } .badge-mid { background: #1a3050; color: #7ab8f0; } .badge-adv { background: #302010; color: #f0a850; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <h1>🧠 クイズアプリ技術ガイド</h1>
+    <p>quiz.html を読み解きながら、Webアプリ開発の基礎〜応用を学ぶ</p>
+  </div>
+
+  <div class="toc">
+    <h2>目次</h2>
+    <ol>
+      <li><a href="#s1">全体像 — データと画面の関係</a></li>
+      <li><a href="#s2">データ設計 — BANKオブジェクトの構造</a></li>
+      <li><a href="#s3">シャッフルアルゴリズム — Fisher-Yates法</a></li>
+      <li><a href="#s4">DOM操作 — 画面を動的に作る</a></li>
+      <li><a href="#s5">CSS — ダークモード・プログレスバー・safe-area</a></li>
+      <li><a href="#s6">深堀り学習（クリックで展開）</a></li>
+    </ol>
+  </div>
+
+  <!-- Section 1 -->
+  <div id="s1" class="section">
+    <h2 class="section-title"><span class="num">1</span>全体像 — データと画面の関係</h2>
+    <p class="lead">quiz.html は「データ（問題バンク）」と「画面（3つのカード）」を JavaScript が橋渡しする構造になっています。</p>
+
+    <div class="diagram">画面は3つのカード（同時に1つだけ表示）
+┌─────────────────────────────────┐
+│  #start（ジャンル選択）          │ ← 最初に表示
+│  #quiz（出題中）                 │ ← 選択後に表示
+│  #result（結果表示）             │ ← 全問終了後
+└─────────────────────────────────┘
+         ↕ JavaScriptが切り替え
+┌─────────────────────────────────┐
+│  BANK オブジェクト（問題データ） │
+│  vbm: { questions: [...] }      │
+│  tmvpn: { questions: [...] }    │
+│  tmc: { questions: [...] }      │
+└─────────────────────────────────┘</div>
+
+    <p>画面の切り替えは <code>classList.add("hidden")</code> / <code>classList.remove("hidden")</code> で行っています。CSSで <code>.hidden { display: none; }</code> と定義しているので、このクラスを付け外しするだけで表示/非表示が切り替わります。</p>
+
+    <div class="point">
+      <div class="label">QUIZ.HTML の技術スタック</div>
+      <div class="chips">
+        <span class="chip">HTML（骨格）</span>
+        <span class="chip">CSS変数（テーマ）</span>
+        <span class="chip">JavaScript（ロジック）</span>
+        <span class="chip">DOM操作（動的生成）</span>
+        <span class="chip">Fisher-Yatesシャッフル</span>
+        <span class="chip">safe-area（iPhone対応）</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2 -->
+  <div id="s2" class="section">
+    <h2 class="section-title"><span class="num">2</span>データ設計 — BANKオブジェクトの構造</h2>
+    <p class="lead">すべての問題データは <code>BANK</code> という1つのオブジェクトにまとめられています。設計の工夫を読み解きましょう。</p>
+
+    <h3>BANKの構造</h3>
+    <pre><span class="kw">const</span> <span class="prop">BANK</span> = {
+  <span class="prop">vbm</span>: {
+    <span class="prop">name</span>: <span class="str">"VBM / iVBM（ウイルスバスター モバイル）"</span>,
+    <span class="prop">questions</span>: [
+      {
+        <span class="prop">q</span>: <span class="str">"トライアルライセンスの有効期間は？"</span>,
+        <span class="prop">choices</span>: [<span class="str">"7日間"</span>, <span class="str">"14日間"</span>, <span class="str">"30日間"</span>, <span class="str">"90日間"</span>],
+        <span class="prop">answer</span>: <span class="num-c">2</span>,     <span class="comment">// ← 正解は choices[2]（30日間）</span>
+        <span class="prop">explain</span>: <span class="str">"体験版は30日間のみ有効..."</span>
+      },
+      <span class="comment">// ... 他の問題</span>
+    ]
+  },
+  <span class="prop">tmvpn</span>: { <span class="comment">/* 同じ構造 */</span> },
+  <span class="prop">tmc</span>:   { <span class="comment">/* 同じ構造 */</span> }
+};</pre>
+
+    <h3>answer は「インデックス番号」で持つ</h3>
+    <p><code>answer: 2</code> は「choices配列の2番目（0始まり）が正解」という意味です。正解の文字列そのものではなく <strong>番号で持つ</strong> のがポイントで、後でシャッフルするときに対応が取れます（セクション3で詳しく説明）。</p>
+
+    <table>
+      <tr><th>設計の選択肢</th><th>メリット</th><th>デメリット</th></tr>
+      <tr><td>正解を文字列で持つ（"30日間"）</td><td>直感的に読める</td><td>シャッフル後も文字列比較が必要、タイポで壊れる</td></tr>
+      <tr><td>正解をインデックスで持つ（2）← 採用</td><td>シャッフル後の再マッピングが可能</td><td>コード読解に慣れが必要</td></tr>
+    </table>
+
+    <h3>Object.keys() でジャンル一覧を動的生成</h3>
+    <pre><span class="fn">Object</span>.keys(<span class="prop">BANK</span>).forEach(key => {
+  <span class="comment">// key = "vbm", "tmvpn", "tmc" の順に処理</span>
+  <span class="kw">const</span> b = document.<span class="fn">createElement</span>(<span class="str">"button"</span>);
+  b.innerHTML = BANK[key].name + <span class="str">" — "</span> + BANK[key].questions.length + <span class="str">"問"</span>;
+});</pre>
+    <p>ジャンルボタンをハードコードせず、<code>BANK</code> のキーから自動生成しているので、問題を追加したときにHTMLを変更する必要がありません。</p>
+  </div>
+
+  <!-- Section 3 -->
+  <div id="s3" class="section">
+    <h2 class="section-title"><span class="num">3</span>シャッフルアルゴリズム — Fisher-Yates法</h2>
+    <p class="lead">問題の順番と選択肢の順番を毎回ランダムにするために、<strong>Fisher-Yates シャッフル</strong> を使っています。</p>
+
+    <h3>Fisher-Yatesとは？</h3>
+    <p><code>Math.random()</code> で単純にソートする方法（<code>arr.sort(() => Math.random() - 0.5)</code>）は統計的に偏りが出ます。Fisher-Yates は末尾から順に「ランダムな位置と交換」を繰り返す方法で、すべての並び順が等確率になります。</p>
+
+    <pre><span class="kw">function</span> <span class="fn">shuffle</span>(arr) {
+  <span class="kw">const</span> a = arr.<span class="fn">slice</span>();  <span class="comment">// 元の配列を壊さないようコピー</span>
+  <span class="kw">for</span> (<span class="kw">let</span> i = a.length - <span class="num-c">1</span>; i > <span class="num-c">0</span>; i--) {
+    <span class="kw">const</span> j = Math.<span class="fn">floor</span>(Math.<span class="fn">random</span>() * (i + <span class="num-c">1</span>));
+    [a[i], a[j]] = [a[j], a[i]];  <span class="comment">// 分割代入で交換</span>
+  }
+  <span class="kw">return</span> a;
+}</pre>
+
+    <div class="diagram">例：[A, B, C, D] をシャッフル
+
+i=3: j=1 → [A, D, C, B]   ← B と D を交換
+i=2: j=2 → [A, D, C, B]   ← C と C を交換（変化なし）
+i=1: j=0 → [D, A, C, B]   ← A と D を交換
+結果: [D, A, C, B]</div>
+
+    <h3>選択肢シャッフル後のanswerインデックス再マッピング</h3>
+    <p>選択肢をシャッフルすると「正解が何番目か」が変わります。<code>shuffleChoices()</code> 関数がこの再マッピングを担当しています。</p>
+
+    <pre><span class="kw">function</span> <span class="fn">shuffleChoices</span>(item) {
+  <span class="comment">// [0,1,2,3] をシャッフルした順序を作る</span>
+  <span class="kw">const</span> order = <span class="fn">shuffle</span>(item.choices.<span class="fn">map</span>((_, i) => i));
+  <span class="comment">// 例: order = [2, 0, 3, 1]</span>
+
+  <span class="kw">return</span> {
+    q: item.q,
+    choices: order.<span class="fn">map</span>(i => item.choices[i]),
+    <span class="comment">// order.indexOf(item.answer) で「元の正解が新しい配列の何番目か」を求める</span>
+    answer: order.<span class="fn">indexOf</span>(item.answer),
+    explain: item.explain
+  };
+}</pre>
+
+    <div class="diagram">具体例：
+元の choices = ["7日間", "14日間", "30日間", "90日間"]
+元の answer  = 2（"30日間"）
+
+order = [2, 0, 3, 1] にシャッフルされた場合
+新しい choices = ["30日間", "7日間", "90日間", "14日間"]
+新しい answer  = order.indexOf(2) = 0（先頭が正解）</div>
+  </div>
+
+  <!-- Section 4 -->
+  <div id="s4" class="section">
+    <h2 class="section-title"><span class="num">4</span>DOM操作 — 画面を動的に作る</h2>
+    <p class="lead">選択肢ボタンは HTML に書かれていません。JavaScript が <code>createElement</code> で動的に生成しています。</p>
+
+    <h3>createElement vs innerHTML</h3>
+    <table>
+      <tr><th>方法</th><th>コード例</th><th>向いている場面</th></tr>
+      <tr><td>createElement</td><td><code>document.createElement("button")</code></td><td>イベントハンドラを直接付けたいとき（quiz.htmlはこちら）</td></tr>
+      <tr><td>innerHTML</td><td><code>box.innerHTML = "&lt;button&gt;...&lt;/button&gt;"</code></td><td>大量のHTMLを一括で書き換えたいとき</td></tr>
+    </table>
+
+    <pre><span class="comment">// render() 関数の核心部分</span>
+<span class="kw">const</span> box = $(<span class="str">"choices"</span>);
+box.innerHTML = <span class="str">""</span>;  <span class="comment">// 前の選択肢を全消去</span>
+
+item.choices.<span class="fn">forEach</span>((c, i) => {
+  <span class="kw">const</span> b = document.<span class="fn">createElement</span>(<span class="str">"button"</span>);
+  b.className = <span class="str">"choice"</span>;
+  b.textContent = c;
+  b.onclick = () => <span class="fn">choose</span>(i);  <span class="comment">// i をクロージャで保持</span>
+  box.<span class="fn">appendChild</span>(b);
+});</pre>
+
+    <h3>クロージャで i を保持する</h3>
+    <p><code>b.onclick = () => choose(i)</code> の <code>i</code> は、ボタン生成時の番号がそのまま「閉じ込め」られます。これを <strong>クロージャ</strong> と呼びます。4つのボタンがそれぞれ 0,1,2,3 を覚えているイメージです。</p>
+
+    <h3>答え後の色変え</h3>
+    <pre><span class="comment">// choose(i) 内 — 全ボタンを走査して色を付ける</span>
+buttons.<span class="fn">forEach</span>((b, bi) => {
+  b.disabled = <span class="kw">true</span>;  <span class="comment">// 二重選択を防ぐ</span>
+  <span class="kw">if</span> (bi === item.answer) {
+    b.style.background = <span class="str">"var(--ok-bg)"</span>;  <span class="comment">// 正解は緑</span>
+  } <span class="kw">else if</span> (bi === i) {
+    b.style.background = <span class="str">"var(--ng-bg)"</span>;  <span class="comment">// 選んだ不正解は赤</span>
+  }
+  <span class="comment">// それ以外（選ばれなかった不正解）は変化なし</span>
+});</pre>
+
+    <div class="point">
+      <div class="label">locked 変数の役割</div>
+      <p style="margin:0;font-size:14px;">答えを選んだ瞬間に <code>locked = true</code> にして、2度目のクリックを <code>if(locked) return;</code> で弾いています。<code>disabled</code> を付けるより先にロックすることで、高速連打でも二重処理されません。</p>
+    </div>
+  </div>
+
+  <!-- Section 5 -->
+  <div id="s5" class="section">
+    <h2 class="section-title"><span class="num">5</span>CSS — ダークモード・プログレスバー・safe-area</h2>
+    <p class="lead">quiz.html は見た目の工夫が3つあります。CSS変数によるダークモード、アニメーション付きプログレスバー、iPhoneのノッチ対応です。</p>
+
+    <h3>CSS変数でダークモードを一括切り替え</h3>
+    <pre><span class="comment">/* ライトモード（デフォルト） */</span>
+<span class="prop">:root</span> {
+  <span class="prop">--bg</span>: <span class="num-c">#f4f3ef</span>;
+  <span class="prop">--accent</span>: <span class="num-c">#d8392f</span>;  <span class="comment">/* トレンドマイクロの赤 */</span>
+}
+
+<span class="comment">/* ダークモード — OSの設定を自動検知 */</span>
+<span class="prop">@media</span> (prefers-color-scheme: dark) {
+  <span class="prop">:root</span> {
+    <span class="prop">--bg</span>: <span class="num-c">#1c1c1a</span>;
+    <span class="prop">--accent</span>: <span class="num-c">#f06a60</span>;  <span class="comment">/* 暗い背景でも見やすい明るめの赤 */</span>
+  }
+}</pre>
+
+    <p><code>var(--accent)</code> と書いておくだけで、ダークモード時は自動的に明るい赤に切り替わります。ボタン・ボーダー・テキストなど何十箇所あっても、変更は <code>:root</code> の2行だけです。</p>
+
+    <h3>プログレスバーのアニメーション</h3>
+    <pre><span class="comment">/* CSS側 — widthの変化を0.3秒でアニメーション */</span>
+.track > div {
+  height: <span class="num-c">100%</span>; width: <span class="num-c">0%</span>;
+  background: var(<span class="prop">--accent</span>);
+  transition: width <span class="num-c">.3s</span>;
+}
+
+<span class="comment">// JS側 — 幅をパーセントで指定するだけ</span>
+$(<span class="str">"bar"</span>).style.width = (idx / list.length * <span class="num-c">100</span>) + <span class="str">"%"</span>;</pre>
+
+    <h3>safe-area — iPhoneのノッチ・ホームバー対応</h3>
+    <pre><span class="comment">/* iPhoneのノッチ・Dynamic Islandにコンテンツが隠れないよう余白を確保 */</span>
+body {
+  padding: <span class="fn">env</span>(safe-area-inset-top)
+           <span class="fn">env</span>(safe-area-inset-right)
+           <span class="fn">env</span>(safe-area-inset-bottom)
+           <span class="fn">env</span>(safe-area-inset-left);
+}</pre>
+
+    <div class="diagram">iPhone の画面
+┌──────────────────┐
+│ ▓▓▓ Dynamic Island  ← safe-area-inset-top で避ける
+│──────────────────│
+│                  │
+│   コンテンツ      │
+│                  │
+│──────────────────│
+│ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ← safe-area-inset-bottom で避ける
+└──────────────────┘  （ホームバー）</div>
+
+    <p><code>viewport-fit=cover</code> をmetaタグに付けると画面端まで使えますが、その代わりにsafe-areaの指定が必要になります。quiz.htmlはこのセットで正しく実装されています。</p>
+  </div>
+
+  <!-- Section 6 深堀り -->
+  <div id="s6" class="section">
+    <h2 class="section-title"><span class="num">6</span>深堀り学習（クリックで展開）</h2>
+    <p>各トピックをクリックすると詳しい解説が開きます。中級・上級のステップアップも入っています。</p>
+
+    <div class="deep-list">
+
+      <!-- 深堀り1: データ設計 -->
+      <div class="deep-item">
+        <button class="deep-toggle" onclick="toggleDeep(this)">
+          <span>📦 データ設計深堀り — BANKオブジェクトとJSONの関係</span>
+          <span class="arrow">▼</span>
+        </button>
+        <div class="deep-body">
+          <div class="deep-body-inner">
+            <h3 style="margin-top:0;">なぜオブジェクトで問題を持つのか</h3>
+            <p>問題データをHTMLに直接書く方法もありますが、HTMLはデータを持つのが苦手です。JSオブジェクトで持つと <strong>追加・削除・並び替えがコードで自由にできます</strong>。</p>
+
+            <pre><span class="comment">// BANKは実質的にJSONと同じ構造
+// JSONファイルにすると外部から読み込める
+</span>{
+  <span class="str">"vbm"</span>: {
+    <span class="str">"name"</span>: <span class="str">"VBM / iVBM"</span>,
+    <span class="str">"questions"</span>: [...]
+  }
+}</pre>
+
+            <p>quiz.html ではBANKをJSの中に直接書いていますが、将来的にJSONファイルとして分離し <code>fetch()</code> で読み込む形にも発展できます。</p>
+
+            <div class="stepup-section">
+              <div class="stepup-label">📚 ステップアップ</div>
+              <div class="stepup-list">
+
+                <div class="stepup-item">
+                  <button class="stepup-toggle" onclick="toggleStepup(this)">
+                    <span class="badge badge-mid">中級</span>
+                    <span>配列メソッドでデータを操作する（filter / map / find）</span>
+                    <span class="su-arrow">▼</span>
+                  </button>
+                  <div class="stepup-body">
+                    <div class="stepup-body-inner">
+                      <p>BANKのデータを加工するのに便利な3つのメソッドを覚えましょう。</p>
+                      <pre><span class="kw">const</span> questions = BANK.vbm.questions;
+
+<span class="comment">// filter: 条件に合うものだけ取り出す</span>
+<span class="kw">const</span> hard = questions.<span class="fn">filter</span>(q => q.explain.length > <span class="num-c">40</span>);
+
+<span class="comment">// map: 全要素を変換して新配列を作る</span>
+<span class="kw">const</span> texts = questions.<span class="fn">map</span>(q => q.q);  <span class="comment">// 質問文だけの配列</span>
+
+<span class="comment">// find: 条件に合う最初の1件を取り出す</span>
+<span class="kw">const</span> first = questions.<span class="fn">find</span>(q => q.answer === <span class="num-c">0</span>);</pre>
+                      <p>これらは <strong>元の配列を変更しない</strong>（非破壊的）のが重要なポイントです。</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="stepup-item">
+                  <button class="stepup-toggle" onclick="toggleStepup(this)">
+                    <span class="badge badge-adv">上級</span>
+                    <span>よくあるミス・外部JSONの読み込みパターン</span>
+                    <span class="su-arrow">▼</span>
+                  </button>
+                  <div class="stepup-body">
+                    <div class="stepup-body-inner">
+                      <div class="warn">⚠️ よくあるミス：answerをインデックスで持っているのを忘れて文字列比較してしまう</div>
+                      <pre><span class="comment">// NG: 正解文字列と比較しようとする（動かない）</span>
+<span class="kw">if</span> (selectedText === item.answer) { ... }
+
+<span class="comment">// OK: インデックスで比較</span>
+<span class="kw">if</span> (selectedIndex === item.answer) { ... }</pre>
+                      <p><strong>外部JSONに分離する場合（発展）：</strong></p>
+                      <pre><span class="comment">// questions.json を別ファイルにした場合</span>
+<span class="kw">async function</span> <span class="fn">loadBank</span>() {
+  <span class="kw">const</span> res = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">"questions.json"</span>);
+  <span class="kw">const</span> bank = <span class="kw">await</span> res.<span class="fn">json</span>();
+  <span class="fn">buildGenres</span>(bank);  <span class="comment">// 読み込み後にUI構築</span>
+}
+<span class="fn">loadBank</span>();</pre>
+                      <p>ただしこの場合は <strong>ローカルファイルとして開くだけでは動かない</strong>（CORSエラー）。GitHub PagesのようなWebサーバー経由が必要になります。</p>
+                      <p>次に学ぶ技術：<strong>fetch API、async/await、CORS</strong></p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 深堀り2: シャッフル -->
+      <div class="deep-item">
+        <button class="deep-toggle" onclick="toggleDeep(this)">
+          <span>🔀 シャッフル深堀り — なぜFisher-Yatesが正しいのか</span>
+          <span class="arrow">▼</span>
+        </button>
+        <div class="deep-body">
+          <div class="deep-body-inner">
+            <h3 style="margin-top:0;">よく使われるダメなシャッフル</h3>
+            <pre><span class="comment">// NG: sort + random は統計的に偏りがある</span>
+arr.<span class="fn">sort</span>(() => Math.<span class="fn">random</span>() - <span class="num-c">0.5</span>);</pre>
+
+            <p>このコードは「比較関数が毎回ランダムな値を返す」ことで並び順を変えますが、<code>sort</code> の内部アルゴリズムによっては特定の順番が出やすくなります。大事な場面（テスト・ガチャなど）では使わないほうが無難です。</p>
+
+            <h3>Fisher-Yatesが正しい理由</h3>
+            <pre><span class="comment">// 末尾から先頭に向かって「ランダムな位置と交換」</span>
+<span class="kw">for</span> (<span class="kw">let</span> i = a.length - <span class="num-c">1</span>; i > <span class="num-c">0</span>; i--) {
+  <span class="kw">const</span> j = Math.<span class="fn">floor</span>(Math.<span class="fn">random</span>() * (i + <span class="num-c">1</span>));
+  [a[i], a[j]] = [a[j], a[i]];  <span class="comment">// 分割代入で交換</span>
+}</pre>
+
+            <p>各ステップで「残りの要素から等確率に1つ選ぶ」を繰り返すので、すべての並び順が数学的に等確率になります。</p>
+
+            <div class="stepup-section">
+              <div class="stepup-label">📚 ステップアップ</div>
+              <div class="stepup-list">
+
+                <div class="stepup-item">
+                  <button class="stepup-toggle" onclick="toggleStepup(this)">
+                    <span class="badge badge-mid">中級</span>
+                    <span>分割代入（Destructuring）をマスターする</span>
+                    <span class="su-arrow">▼</span>
+                  </button>
+                  <div class="stepup-body">
+                    <div class="stepup-body-inner">
+                      <p>Fisher-Yatesで使っている <code>[a[i], a[j]] = [a[j], a[i]]</code> は <strong>分割代入</strong> という構文です。</p>
+                      <pre><span class="comment">// 従来の交換（temp変数が必要）</span>
+<span class="kw">let</span> temp = a[i];
+a[i] = a[j];
+a[j] = temp;
+
+<span class="comment">// 分割代入での交換（1行で書ける）</span>
+[a[i], a[j]] = [a[j], a[i]];</pre>
+                      <p>分割代入はオブジェクトにも使えます：</p>
+                      <pre><span class="kw">const</span> { name, questions } = BANK.vbm;
+<span class="comment">// name = "VBM / iVBM..."</span>
+<span class="comment">// questions = [...]</span></pre>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="stepup-item">
+                  <button class="stepup-toggle" onclick="toggleStepup(this)">
+                    <span class="badge badge-adv">上級</span>
+                    <span>シャッフルの偏りをコンソールで検証する</span>
+                    <span class="su-arrow">▼</span>
+                  </button>
+                  <div class="stepup-body">
+                    <div class="stepup-body-inner">
+                      <p>ブラウザのコンソール（F12）で以下を実行すると、各並び順の出現回数を検証できます。</p>
+                      <pre><span class="comment">// Fisher-Yates の検証スクリプト</span>
+<span class="kw">const</span> counts = {};
+<span class="kw">for</span> (<span class="kw">let</span> t = <span class="num-c">0</span>; t < <span class="num-c">10000</span>; t++) {
+  <span class="kw">const</span> a = [<span class="num-c">0</span>, <span class="num-c">1</span>, <span class="num-c">2</span>];
+  <span class="kw">for</span> (<span class="kw">let</span> i = a.length - <span class="num-c">1</span>; i > <span class="num-c">0</span>; i--) {
+    <span class="kw">const</span> j = Math.<span class="fn">floor</span>(Math.<span class="fn">random</span>() * (i + <span class="num-c">1</span>));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  <span class="kw">const</span> key = a.join(<span class="str">","</span>);
+  counts[key] = (counts[key] || <span class="num-c">0</span>) + <span class="num-c">1</span>;
+}
+console.<span class="fn">log</span>(counts);
+<span class="comment">// 各パターンが約1666回（=10000÷6）になれば均等</span></pre>
+                      <div class="warn">💡 DevTools の使い方：F12 → Consoleタブ → コードを貼り付けてEnter</div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 深堀り3: DOM操作 -->
+      <div class="deep-item">
+        <button class="deep-toggle" onclick="toggleDeep(this)">
+          <span>🖱️ DOM操作深堀り — クロージャとイベント処理</span>
+          <span class="arrow">▼</span>
+        </button>
+        <div class="deep-body">
+          <div class="deep-body-inner">
+            <h3 style="margin-top:0;">クロージャとは何か</h3>
+            <p>JavaScriptの関数は「作られたときのスコープを記憶する」性質があります。これをクロージャと呼びます。</p>
+
+            <pre><span class="comment">// forEach のループ変数 i が各ボタンに閉じ込められる</span>
+item.choices.<span class="fn">forEach</span>((c, i) => {
+  <span class="kw">const</span> b = document.<span class="fn">createElement</span>(<span class="str">"button"</span>);
+  b.textContent = c;
+  b.onclick = () => <span class="fn">choose</span>(i);  <span class="comment">// この i は 0, 1, 2, 3 それぞれ固定</span>
+  box.<span class="fn">appendChild</span>(b);
+});</pre>
+
+            <div class="warn">⚠️ よくあるミス：var でループするとクロージャが壊れる</div>
+            <pre><span class="comment">// NG: var は関数スコープなので全ボタンが同じ i を共有してしまう</span>
+<span class="kw">for</span> (<span class="kw">var</span> i = <span class="num-c">0</span>; i < choices.length; i++) {
+  buttons[i].onclick = () => <span class="fn">choose</span>(i);  <span class="comment">// 全部 i=4 になる！</span>
+}
+
+<span class="comment">// OK: let はブロックスコープで各反復に独立したiを作る</span>
+<span class="kw">for</span> (<span class="kw">let</span> i = <span class="num-c">0</span>; i < choices.length; i++) {
+  buttons[i].onclick = () => <span class="fn">choose</span>(i);  <span class="comment">// 正しく 0,1,2,3 になる</span>
+}</pre>
+
+            <h3>querySelectorAll と forEach</h3>
+            <pre><span class="comment">// 選択後に全ボタンを操作する場面</span>
+<span class="kw">const</span> buttons = $(<span class="str">"choices"</span>).<span class="fn">querySelectorAll</span>(<span class="str">"button"</span>);
+buttons.<span class="fn">forEach</span>((b, bi) => {
+  b.disabled = <span class="kw">true</span>;  <span class="comment">// 全ボタンを無効化</span>
+  <span class="kw">if</span> (bi === item.answer) {
+    b.style.background = <span class="str">"var(--ok-bg)"</span>;
+  }
+});</pre>
+
+            <div class="stepup-section">
+              <div class="stepup-label">📚 ステップアップ</div>
+              <div class="stepup-list">
+
+                <div class="stepup-item">
+                  <button class="stepup-toggle" onclick="toggleStepup(this)">
+                    <span class="badge badge-mid">中級</span>
+                    <span>イベント委譲（Event Delegation）パターン</span>
+                    <span class="su-arrow">▼</span>
+                  </button>
+                  <div class="stepup-body">
+                    <div class="stepup-body-inner">
+                      <p>quiz.htmlは各ボタンに個別に <code>onclick</code> を付けています。ボタンが増えるほどイベントハンドラも増えますが、<strong>イベント委譲</strong> を使うと親要素1つにまとめられます。</p>
+                      <pre><span class="comment">// 各ボタンにonclickを付ける代わりに、親要素で受け取る</span>
+$(<span class="str">"choices"</span>).addEventListener(<span class="str">"click"</span>, (e) => {
+  <span class="kw">const</span> btn = e.target.<span class="fn">closest</span>(<span class="str">"button"</span>);
+  <span class="kw">if</span> (!btn) <span class="kw">return</span>;  <span class="comment">// ボタン以外は無視</span>
+  <span class="kw">const</span> i = [...btn.parentNode.children].<span class="fn">indexOf</span>(btn);
+  <span class="fn">choose</span>(i);
+});</pre>
+                      <p>動的にボタンを追加・削除してもイベントが自動的に効くのがメリットです。</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="stepup-item">
+                  <button class="stepup-toggle" onclick="toggleStepup(this)">
+                    <span class="badge badge-adv">上級</span>
+                    <span>よくあるミス・DevToolsでのデバッグ手順</span>
+                    <span class="su-arrow">▼</span>
+                  </button>
+                  <div class="stepup-body">
+                    <div class="stepup-body-inner">
+                      <div class="warn">⚠️ よくあるミス1：getElementById で存在しない要素を取得してnullエラー</div>
+                      <pre><span class="comment">// エラー: Cannot read properties of null
+</span>$(<span class="str">"progres"</span>).textContent = ...;  <span class="comment">// タイポ！"progress"が正しい</span>
+
+<span class="comment">// デバッグ：まずconsole.logで確認
+</span>console.<span class="fn">log</span>($(<span class="str">"progres"</span>));  <span class="comment">// → null と表示されればIDが間違い</span></pre>
+                      <div class="warn">⚠️ よくあるミス2：イベントを二重登録してしまう</div>
+                      <pre><span class="comment">// render()を呼ぶたびにaddEventListenerが追加される
+</span>$(<span class="str">"next"</span>).addEventListener(<span class="str">"click"</span>, handler);  <span class="comment">// render()の中に置くとNG</span>
+
+<span class="comment">// quiz.htmlは $("next").onclick = ... と代入方式にして回避している
+</span>$(<span class="str">"next"</span>).onclick = () => { ... };  <span class="comment">// 代入は上書きされるので二重登録なし</span></pre>
+                      <p><strong>DevToolsでの確認手順：</strong></p>
+                      <ol>
+                        <li>F12 → Elements タブ → 対象の要素を選択</li>
+                        <li>右ペインの「Event Listeners」タブで登録済みイベントを確認</li>
+                        <li>二重登録されていれば同じ関数が2行表示される</li>
+                      </ol>
+                      <p>次に学ぶ技術：<strong>React / Vue.js</strong>（DOM操作を自動管理するフレームワーク）</p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 深堀り4: CSS -->
+      <div class="deep-item">
+        <button class="deep-toggle" onclick="toggleDeep(this)">
+          <span>🎨 CSS深堀り — ダークモードとsafe-areaの実装詳細</span>
+          <span class="arrow">▼</span>
+        </button>
+        <div class="deep-body">
+          <div class="deep-body-inner">
+            <h3 style="margin-top:0;">CSS変数の仕組み</h3>
+            <p>CSS変数（カスタムプロパティ）は <code>--名前: 値</code> で定義し、<code>var(--名前)</code> で使います。<code>:root</code> に定義するとページ全体で使えます。</p>
+
+            <pre><span class="comment">/* 定義 */</span>
+<span class="prop">:root</span> { <span class="prop">--accent</span>: <span class="num-c">#d8392f</span>; }
+
+<span class="comment">/* 使用 */</span>
+button { background: <span class="fn">var</span>(<span class="prop">--accent</span>); }
+.border { border-color: <span class="fn">var</span>(<span class="prop">--accent</span>); }
+
+<span class="comment">/* デフォルト値も指定できる */</span>
+color: <span class="fn">var</span>(<span class="prop">--missing</span>, red);  <span class="comment">/* --missingがなければredを使う */</span></pre>
+
+            <h3>prefers-color-scheme の動作</h3>
+            <p>OS（Windows/Mac/iOS/Android）のダークモード設定をCSSで読み取れます。ブラウザが自動でライト/ダークを切り替えてくれるので、JavaScriptを一切書かずにダークモードが実現できます。</p>
+
+            <h3>transition でなめらかなプログレスバー</h3>
+            <pre><span class="comment">/* CSS側でwidthの変化をアニメーション */</span>
+.track > div { transition: width <span class="num-c">.3s</span>; }
+
+<span class="comment">// JS側は width を変えるだけ — CSSが自動でアニメーション</span>
+$(<span class="str">"bar"</span>).style.width = ((idx + <span class="num-c">1</span>) / list.length * <span class="num-c">100</span>) + <span class="str">"%"</span>;</pre>
+
+            <div class="stepup-section">
+              <div class="stepup-label">📚 ステップアップ</div>
+              <div class="stepup-list">
+
+                <div class="stepup-item">
+                  <button class="stepup-toggle" onclick="toggleStepup(this)">
+                    <span class="badge badge-mid">中級</span>
+                    <span>Flexboxとボタンレイアウトの仕組み</span>
+                    <span class="su-arrow">▼</span>
+                  </button>
+                  <div class="stepup-body">
+                    <div class="stepup-body-inner">
+                      <p>quiz.htmlでは <code>.row-between</code> や <code>.result-actions</code> にFlexboxを使って要素を並べています。</p>
+                      <pre><span class="comment">/* 左右に振り分けるパターン */</span>
+.row-between {
+  display: flex;
+  justify-content: space-between;  <span class="comment">/* 両端に配置 */</span>
+  align-items: center;             <span class="comment">/* 縦方向中央揃え */</span>
+}
+
+<span class="comment">/* 横並びで折り返すパターン（ボタン群） */</span>
+.result-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;  <span class="comment">/* 画面が狭ければ折り返す */</span>
+  justify-content: center;
+}</pre>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="stepup-item">
+                  <button class="stepup-toggle" onclick="toggleStepup(this)">
+                    <span class="badge badge-adv">上級</span>
+                    <span>よくあるミス・safe-areaの落とし穴</span>
+                    <span class="su-arrow">▼</span>
+                  </button>
+                  <div class="stepup-body">
+                    <div class="stepup-body-inner">
+                      <div class="warn">⚠️ よくあるミス：viewport-fit=cover がないとenv()が効かない</div>
+                      <pre><span class="comment">/* NG: viewport-fit=cover を忘れるとenv()が常に0を返す */</span>
+&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+
+<span class="comment">/* OK: viewport-fit=cover を追加する */</span>
+&lt;meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"&gt;</pre>
+                      <div class="warn">⚠️ よくあるミス：CSS詳細度の競合でスタイルが上書きされない</div>
+                      <pre><span class="comment">/* どちらが優先される？ */</span>
+button.choice { background: white; }   <span class="comment">/* 詳細度: 0,1,1 */</span>
+.card button  { background: gray;  }   <span class="comment">/* 詳細度: 0,1,1 */</span>
+<span class="comment">/* → 後に書いた方が勝つ（同点は後勝ち） */</span>
+
+<span class="comment">/* DevToolsで確認：</span>
+<span class="comment">   Elementsタブ → 要素を選択 → Stylesペインで</span>
+<span class="comment">   取り消し線のあるスタイル = 負けて上書きされたもの */</span></pre>
+                      <p>次に学ぶ技術：<strong>Tailwind CSS</strong>（ユーティリティクラスでCSSを書かずにスタイリング）</p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggleDeep(btn) {
+  const body = btn.nextElementSibling;
+  const isOpen = btn.classList.contains('open');
+  btn.classList.toggle('open', !isOpen);
+  body.classList.toggle('open', !isOpen);
+}
+function toggleStepup(btn) {
+  const body = btn.nextElementSibling;
+  const isOpen = btn.classList.contains('open');
+  btn.classList.toggle('open', !isOpen);
+  body.classList.toggle('open', !isOpen);
+}
+</script>
+</body>
+</html>
