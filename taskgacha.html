@@ -252,7 +252,7 @@ function renderTasks(){
     const done=document.createElement("button"); done.className="btn done mini"; done.textContent="完了";
     done.onclick=()=>openMemo(t);
     const del=document.createElement("button"); del.className="btn del"; del.textContent="✕"; del.title="削除";
-    del.onclick=()=>{ data.tasks=data.tasks.filter(x=>x.id!==t.id); save(); renderTasks(); };
+    del.onclick=()=>{ if(!confirm("「"+t.name+"」を削除しますか？")) return; data.tasks=data.tasks.filter(x=>x.id!==t.id); save(); renderTasks(); };
     row.appendChild(done); row.appendChild(del); box.appendChild(row);
   });
   if(data.tasks.length===0) box.innerHTML='<p class="muted" style="padding:14px 0;text-align:center;">タスクがありません。下から追加してください。</p>';
